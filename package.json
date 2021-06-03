@@ -1,0 +1,21 @@
+{
+	"name": "uprophet-backend",
+	"version": "1.0.0",
+	"description": "",
+	"main": "script.js",
+	"scripts": {
+		"start": "nodemon server.js"
+	},
+	"author": "Isaiah Jenkins",
+	"license": "ISC",
+	"dependencies": {
+		"bcryptjs": "^2.4.3",
+		"cors": "^2.8.5",
+		"express": "^4.17.1",
+		"knex": "^0.95.6",
+		"mysql": "^2.18.1"
+	},
+	"devDependencies": {
+		"nodemon": "^2.0.7"
+	}
+}
