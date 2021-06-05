@@ -34,7 +34,6 @@ const handleSignup = (req, res, db, crypto, NONCE_SALT, SITE_KEY) => {
 						user_registered: userreg
 					})
 					.then((user) => {
-						console.log(user);
 						res.json(user[0]);
 					});
 			})
