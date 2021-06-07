@@ -45,6 +45,9 @@ const fetchHome = (req, res, db) => {
 	}).catch((err) => res.status(400).json('unable to fetech quotes: ' + err));
 };
 
+const createQuote = (req, res, db) => {};
+
 module.exports = {
-	fetchHome
+	fetchHome,
+	createQuote
 };
