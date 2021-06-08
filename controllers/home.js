@@ -1,13 +1,14 @@
-const fetchHome = (req, res, db) => {
+const fetchHome = (req, res, db, zlib) => {
 	const { id, userName } = req.body;
 
 	db.transaction((trx) => {
 		let maxIds = [];
+		let allUsers = [];
 		trx.select('to_user')
 			.from('favoriting')
 			.where('from_user', userName)
 			.then((users) => {
-				const allUsers = users.map((users) => users.to_user);
+				allUsers = users.map((user) => user.to_user);
 				maxIds = trx.max('id').from('quotes').whereIn('user_name', allUsers).groupBy('user_name');
 				return trx.select('*').from('quotes').whereIn('id', maxIds);
 			})
@@ -17,9 +18,9 @@ const fetchHome = (req, res, db) => {
 					.from('likes')
 					.whereIn('quotes_id', maxIds)
 					.groupBy('quotes_id')
-					.then((likeCounts) => {
-						return likeCounts.map((value, i) => {
-							return { ...quotes[i], likeCount: value['count(`quotes_id`)'] };
+					.then((likeCountsForQuotes) => {
+						return likeCountsForQuotes.map((likeCountForQuote, i) => {
+							return { ...quotes[i], likeCount: likeCountForQuote['count(`quotes_id`)'] };
 						});
 					});
 			})
@@ -34,9 +35,23 @@ const fetchHome = (req, res, db) => {
 						quoteIds.forEach((quoteId) => {
 							quoteIdSet.add(quoteId['quotes_id']);
 						});
-						const finalQuotes = quotesWithLikeCount.map((value, i) => {
-							return { ...quotesWithLikeCount[i], didLike: quoteIdSet.has(quotesWithLikeCount[i]['id']) ? true : false };
+						return quotesWithLikeCount.map((quoteWithLikeCount) => {
+							return { ...quoteWithLikeCount, didLike: quoteIdSet.has(quoteWithLikeCount['id']) ? true : false };
 						});
+					});
+			})
+			.then((finalQuotes) => {
+				return trx
+					.select(['user_name', 'photo'])
+					.from('users')
+					.whereIn('user_name', allUsers)
+					.then((photos) => {
+						const idUserPhoto = {};
+						photos.forEach((photo) => {
+							const userPhoto = photo['photo'] ? photo['photo'].toString('base64') : undefined;
+							idUserPhoto[photo['user_name']] = userPhoto;
+						});
+						finalQuotes.push(idUserPhoto);
 						res.json(finalQuotes);
 					});
 			})
@@ -45,7 +60,18 @@ const fetchHome = (req, res, db) => {
 	}).catch((err) => res.status(400).json('unable to fetech quotes: ' + err));
 };
 
-const createQuote = (req, res, db) => {};
+const createQuote = (req, res, db) => {
+	const { userName, title, quote, datePosted } = req.body;
+	db.insert({
+		user_name: userName,
+		title: title,
+		quote: quote,
+		date_posted: datePosted
+	})
+		.into('quotes')
+		.then(() => res.sendStatus(200))
+		.catch(() => res.sendStatus(400));
+};
 
 module.exports = {
 	fetchHome,
