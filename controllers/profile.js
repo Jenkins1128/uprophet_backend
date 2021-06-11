@@ -30,6 +30,13 @@ const fetchProfile = async (req, res, db) => {
 		const finalQuotes = quotesWithLikeCount.map((quoteWithLikeCount) => {
 			return { ...quoteWithLikeCount, didLike: quoteIdSet.has(quoteWithLikeCount['id']) ? true : false };
 		});
+		//Add favoriters and favoriting count to final quotes
+		const favoriters = await trx('favoriting').count('to_user as favoriters').where('to_user', userName);
+		const favoriting = await trx('favoriting').count('from_user as favoriting').where('from_user', userName);
+		finalQuotes.push({
+			favoriters: favoriters.length ? favoriters[0]['favoriters'] : 0,
+			favoriting: favoriting.length ? favoriting[0]['favoriting'] : 0
+		});
 		res.json(finalQuotes);
 		await trx.commit();
 	} catch (error) {
