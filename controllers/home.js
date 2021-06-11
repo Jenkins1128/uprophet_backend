@@ -10,9 +10,9 @@ const fetchHome = async (req, res, db) => {
 		const extractedMaxIds = maxIds.map((maxId) => maxId['maxId']);
 		const quotes = await trx('quotes').select('*').whereIn('id', extractedMaxIds);
 		//Get quotes with like count added
-		const likeCountsForQuotes = await trx('likes').count('quotes_id').whereIn('quotes_id', extractedMaxIds).groupBy('quotes_id');
+		const likeCountsForQuotes = await trx('likes').count('quotes_id as quoteLikeCount').whereIn('quotes_id', extractedMaxIds).groupBy('quotes_id');
 		const quotesWithLikeCount = likeCountsForQuotes.map((likeCountForQuote, i) => {
-			return { ...quotes[i], likeCount: likeCountForQuote['count(`quotes_id`)'] };
+			return { ...quotes[i], likeCount: likeCountForQuote['quoteLikeCount'] };
 		});
 		//Add didLike to each quote
 		const quoteIds = await trx('likes')
@@ -26,6 +26,9 @@ const fetchHome = async (req, res, db) => {
 		const finalQuotes = quotesWithLikeCount.map((quoteWithLikeCount) => {
 			return { ...quoteWithLikeCount, didLike: quoteIdSet.has(quoteWithLikeCount['id']) ? true : false };
 		});
+		//Add notification count
+		const newNotificationsCount = await trx('notifications').count('notifications.id as newNotifications').join('quotes', 'quotes.id', 'notifications.quotes_id').where({ 'quotes.user_name': userName, 'notifications.read': 0 });
+		finalQuotes.push(newNotificationsCount[0]);
 		res.json(finalQuotes);
 		await trx.commit();
 	} catch (error) {

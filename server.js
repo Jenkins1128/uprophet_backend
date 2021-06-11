@@ -10,6 +10,7 @@ const likeButton = require('./controllers/likeButton');
 const quoteComments = require('./controllers/quoteComments');
 const explore = require('./controllers/explore');
 const userphoto = require('./controllers/userphoto');
+const { fetchNotifications } = require('./controllers/notifications');
 
 const SITE_KEY = 'tIVLEabZMrxm!%4ZHJWnXAjxbPt4mYGtyb!@$%&^%VQJsxGjOIdej#OT3EhCpxqC5Bu6KSOJM$$##VJV9jLF5uWiiFXm1G';
 const NONCE_SALT = 'fxmAMC5TiY2_)(eh2DfbOOX4*&F73ldggm8KZP35N48t3OVbTaoOpaOlLydef#_+kvusgNgafnuujTPdazfzqpDy';
@@ -34,6 +35,7 @@ app.get('/', (req, res) => {
 app.get('/quote/:quoteId', (req, res) => quoteComments.fetchComments(req, res, db));
 app.get('/explore', (req, res) => explore.fetchExplore(res, db));
 app.get('/photo', (req, res) => userphoto.getPhoto(req, res, db));
+app.get('/notifications', (req, res) => fetchNotifications(req, res, db));
 
 app.post('/createQuote', (req, res) => home.createQuote(req, res, db));
 app.post('/signin', (req, res) => signin.handleSignin(req, res, db, crypto, NONCE_SALT, SITE_KEY));

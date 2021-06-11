@@ -1,16 +1,21 @@
 const likeQuote = async (req, res, db) => {
-	const { userId, quoteId } = req.body;
-
+	const { userId, userName, quoteId } = req.body;
+	console.log(userId, userName, quoteId);
+	const trx = await db.transaction();
 	try {
-		const likeId = await db('likes').insert({
+		await trx('likes').insert({
 			users_id: userId,
 			quotes_id: quoteId
 		});
-		if (likeId.length) {
-			res.sendStatus(200);
-		}
-	} catch {
-		res.sendStatus(400);
+		await trx('notifications').insert({
+			notice: `${userName} liked your quote.`,
+			quotes_id: quoteId
+		});
+		res.sendStatus(200);
+		await trx.commit();
+	} catch (error) {
+		await trx.rollback();
+		res.status(400).json(error.toString());
 	}
 };
 
