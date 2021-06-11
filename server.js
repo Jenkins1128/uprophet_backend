@@ -11,6 +11,7 @@ const quoteComments = require('./controllers/quoteComments');
 const explore = require('./controllers/explore');
 const userphoto = require('./controllers/userphoto');
 const { fetchNotifications } = require('./controllers/notifications');
+const { fetchProfile } = require('./controllers/profile');
 
 const SITE_KEY = 'tIVLEabZMrxm!%4ZHJWnXAjxbPt4mYGtyb!@$%&^%VQJsxGjOIdej#OT3EhCpxqC5Bu6KSOJM$$##VJV9jLF5uWiiFXm1G';
 const NONCE_SALT = 'fxmAMC5TiY2_)(eh2DfbOOX4*&F73ldggm8KZP35N48t3OVbTaoOpaOlLydef#_+kvusgNgafnuujTPdazfzqpDy';
@@ -32,6 +33,10 @@ app.use(fileUpload());
 app.get('/', (req, res) => {
 	home.fetchHome(req, res, db);
 });
+app.get('/:userName', (req, res) => {
+	fetchProfile(req, res, db);
+});
+
 app.get('/quote/:quoteId', (req, res) => quoteComments.fetchComments(req, res, db));
 app.get('/explore', (req, res) => explore.fetchExplore(res, db));
 app.get('/photo', (req, res) => userphoto.getPhoto(req, res, db));

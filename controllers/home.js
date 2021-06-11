@@ -10,9 +10,13 @@ const fetchHome = async (req, res, db) => {
 		const extractedMaxIds = maxIds.map((maxId) => maxId['maxId']);
 		const quotes = await trx('quotes').select('*').whereIn('id', extractedMaxIds);
 		//Get quotes with like count added
-		const likeCountsForQuotes = await trx('likes').count('quotes_id as quoteLikeCount').whereIn('quotes_id', extractedMaxIds).groupBy('quotes_id');
-		const quotesWithLikeCount = likeCountsForQuotes.map((likeCountForQuote, i) => {
-			return { ...quotes[i], likeCount: likeCountForQuote['quoteLikeCount'] };
+		const likeCountsForQuotes = await trx('likes').select('quotes_id').count('quotes_id as quoteLikeCount').whereIn('quotes_id', extractedMaxIds).groupBy('quotes_id');
+		const likeCountsForQuotesMap = new Map();
+		likeCountsForQuotes.forEach((likeCount) => {
+			likeCountsForQuotesMap.set(likeCount['quotes_id'], likeCount['quoteLikeCount']);
+		});
+		const quotesWithLikeCount = quotes.map((quote) => {
+			return { ...quote, likeCount: likeCountsForQuotesMap.has(quote['id']) ? likeCountsForQuotesMap.get(quote['id']) : 0 };
 		});
 		//Add didLike to each quote
 		const quoteIds = await trx('likes')
