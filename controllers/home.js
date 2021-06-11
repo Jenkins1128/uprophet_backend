@@ -31,8 +31,14 @@ const fetchHome = async (req, res, db) => {
 			return { ...quoteWithLikeCount, didLike: quoteIdSet.has(quoteWithLikeCount['id']) ? true : false };
 		});
 		//Add notification count
-		const newNotificationsCount = await trx('notifications').count('notifications.id as newNotifications').join('quotes', 'quotes.id', 'notifications.quotes_id').where({ 'quotes.user_name': userName, 'notifications.read': 0 });
-		finalQuotes.push(newNotificationsCount[0]);
+		const newLikeNotificationsCount = await trx('like_notifications')
+			.count('like_notifications.id as newLikeNotifications')
+			.join('quotes', 'quotes.id', 'like_notifications.quotes_id')
+			.where({ 'quotes.user_name': userName, 'like_notifications.read': 0 });
+		const newFavoriteNotificationsCount = await trx('favorite_notifications').count('favorite_notifications.id as newFavoriteNotifications').where({ 'favorite_notifications.to_user': userName, 'favorite_notifications.read': 0 });
+		console.log(newLikeNotificationsCount);
+		console.log(newFavoriteNotificationsCount);
+		finalQuotes.push({ notificationCount: newLikeNotificationsCount[0]['newLikeNotifications'] + newFavoriteNotificationsCount[0]['newFavoriteNotifications'] });
 		res.json(finalQuotes);
 		await trx.commit();
 	} catch (error) {

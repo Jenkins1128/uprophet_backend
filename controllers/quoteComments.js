@@ -17,7 +17,7 @@ const addComment = async (req, res, db) => {
 			comment: comment,
 			commenter: commenter
 		});
-		await trx('notifications').insert({
+		await trx('like_notifications').insert({
 			user_name: commenter,
 			notice: `${commenter} commented on your quote.`,
 			quotes_id: quoteId

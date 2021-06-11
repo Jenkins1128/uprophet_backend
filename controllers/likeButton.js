@@ -7,7 +7,7 @@ const likeQuote = async (req, res, db) => {
 			users_id: userId,
 			quotes_id: quoteId
 		});
-		await trx('notifications').insert({
+		await trx('like_notifications').insert({
 			notice: `${userName} liked your quote.`,
 			quotes_id: quoteId
 		});
