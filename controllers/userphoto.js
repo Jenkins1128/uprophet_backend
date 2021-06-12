@@ -5,7 +5,7 @@ const uploadPhoto = async (req, res, db) => {
 	}
 	try {
 		await db('users')
-			.insert({
+			.update({
 				photo_name: name,
 				photo: data
 			})
@@ -16,7 +16,7 @@ const uploadPhoto = async (req, res, db) => {
 	}
 };
 
-const getPhoto = async (req, res, db) => {
+const fetchPhoto = async (req, res, db) => {
 	const { userName } = req.body;
 	try {
 		const img = await db('users').select('photo').where('user_name', userName);
@@ -30,4 +30,4 @@ const getPhoto = async (req, res, db) => {
 	}
 };
 
-module.exports = { uploadPhoto, getPhoto };
+module.exports = { uploadPhoto, fetchPhoto };
