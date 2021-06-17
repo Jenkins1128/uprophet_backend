@@ -1,10 +1,14 @@
-const fetchHome = async (req, res, db) => {
-	const { id, userName } = req.body;
+const fetchHome = async (req, res, db, jwt, refreshToken) => {
+	//const { id, userName } = req.body;
 
 	const trx = await db.transaction();
 	try {
+		//refresh token
+		const { id, username } = await refreshToken(req, res, jwt, db);
+
+		console.log(id + ' ' + username);
 		//Get the latest quote from each user you are following
-		const users = await trx('favoriting').select('to_user').where('from_user', userName);
+		const users = await trx('favoriting').select('to_user').where('from_user', username);
 		const allUsers = users.map((user) => user.to_user);
 		const maxIds = await trx('quotes').max('id as maxId').whereIn('user_name', allUsers).groupBy('user_name');
 		const extractedMaxIds = maxIds.map((maxId) => maxId['maxId']);
@@ -34,15 +38,15 @@ const fetchHome = async (req, res, db) => {
 		const newLikeNotificationsCount = await trx('like_notifications')
 			.count('like_notifications.id as newLikeNotifications')
 			.join('quotes', 'quotes.id', 'like_notifications.quotes_id')
-			.where({ 'quotes.user_name': userName, 'like_notifications.read': 0 });
-		const newFavoriteNotificationsCount = await trx('favorite_notifications').count('favorite_notifications.id as newFavoriteNotifications').where({ 'favorite_notifications.to_user': userName, 'favorite_notifications.read': 0 });
-		console.log(newLikeNotificationsCount);
-		console.log(newFavoriteNotificationsCount);
+			.where({ 'quotes.user_name': username, 'like_notifications.read': 0 });
+		const newFavoriteNotificationsCount = await trx('favorite_notifications').count('favorite_notifications.id as newFavoriteNotifications').where({ 'favorite_notifications.to_user': username, 'favorite_notifications.read': 0 });
 		finalQuotes.push({ notificationCount: newLikeNotificationsCount[0]['newLikeNotifications'] + newFavoriteNotificationsCount[0]['newFavoriteNotifications'] });
+		console.log(finalQuotes);
 		res.json(finalQuotes);
 		await trx.commit();
 	} catch (error) {
 		await trx.rollback();
+		console.log('400 ' + error);
 		res.status(400).json('unable to fetech quotes: ' + error);
 	}
 };
