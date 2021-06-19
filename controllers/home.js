@@ -10,6 +10,7 @@ const fetchHome = async (req, res, db, jwt, refreshToken) => {
 		//Get the latest quote from each user you are following
 		const users = await trx('favoriting').select('to_user').where('from_user', username);
 		const allUsers = users.map((user) => user.to_user);
+		allUsers.push(username);
 		const maxIds = await trx('quotes').max('id as maxId').whereIn('user_name', allUsers).groupBy('user_name');
 		const extractedMaxIds = maxIds.map((maxId) => maxId['maxId']);
 		const quotes = await trx('quotes').select('*').whereIn('id', extractedMaxIds);

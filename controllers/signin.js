@@ -41,18 +41,19 @@ const refreshToken = async (req, res, jwt, db) => {
 	try {
 		refreshToken = await db('users').select('refresh_token').where('user_name', payload.username);
 	} catch (error) {
-		console.log('UH OH 2');
-		return res.status(401).json('no refresh token');
+		return res.sendStatus(400);
 	}
 
+	if (!refreshToken.length) {
+		return res.sendStatus(403);
+	}
 	console.log('refreshToken', refreshToken[0].refresh_token);
 
 	//verify the refresh token
 	try {
 		jwt.verify(refreshToken[0].refresh_token, process.env.REFRESH_TOKEN_SECRET);
 	} catch (e) {
-		console.log('UH OH 3');
-		return res.status(401).json('refresh token invalid');
+		return res.sendStatus(403);
 	}
 
 	let newToken = jwt.sign({ id: payload.id, username: payload.username }, process.env.ACCESS_TOKEN_SECRET, {
@@ -71,7 +72,7 @@ const refreshToken = async (req, res, jwt, db) => {
 const handleSignin = async (req, res, db, crypto, NONCE_SALT, SITE_KEY, jwt) => {
 	const { username, password } = req.body;
 	if (!username || !password) {
-		res.status(400).json('incorrect form submission');
+		return res.status(400).json('incorrect form submission');
 	}
 
 	const trx = await db.transaction();
@@ -95,12 +96,12 @@ const handleSignin = async (req, res, db, crypto, NONCE_SALT, SITE_KEY, jwt) => 
 			res.cookie('upUserId', accessToken, { httpOnly: true });
 			res.sendStatus(200);
 		} else {
-			res.status(400).json('wrong credentials');
+			res.sendStatus(401);
 		}
 		await trx.commit();
 	} catch (err) {
 		await trx.rollback();
-		res.status(400).json('user does not exist.: ' + err);
+		res.sendStatus(401);
 	}
 };
 
