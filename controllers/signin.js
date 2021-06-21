@@ -15,9 +15,15 @@ const compare = (username, password, data, crypto, NONCE_SALT, SITE_KEY) => {
 	return subpass === stopass;
 };
 
-const logout = (req, res) => {
-	res.clearCookie('upUserId');
-	res.sendStatus(204);
+const logout = async (req, res, jwt, db) => {
+	try {
+		const { username } = await refreshToken(req, res, jwt, db);
+		await db('users').update('refresh_token', '').where('user_name', username);
+		res.clearCookie('upUserId');
+		res.sendStatus(204);
+	} catch (error) {
+		res.sendStatus(500);
+	}
 };
 
 const refreshToken = async (req, res, jwt, db) => {
@@ -28,10 +34,17 @@ const refreshToken = async (req, res, jwt, db) => {
 		return res.status(403).send();
 	}
 
-	//TODO - ONCE WE GET ACCESS TOKEN, JUST DECODE THE PAYLOAD AND GET USERNAME, IGNORE THE EXP time dont worry about verify
+	//verify the acess token
+	try {
+		jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
+		const base64Payload = accessToken.split('.')[1];
+		console.log('ACCESS TOKEN VERIFIED base64Payload: ' + base64Payload);
+		const payload = JSON.parse(Buffer.from(base64Payload, 'base64').toString('utf-8'));
+		return payload;
+	} catch {}
 
 	const base64Payload = accessToken.split('.')[1];
-	console.log('base64Payload: ' + base64Payload);
+	console.log('ACCESS TOKEN FAILED base64Payload: ' + base64Payload);
 
 	const payload = JSON.parse(Buffer.from(base64Payload, 'base64').toString('utf-8'));
 

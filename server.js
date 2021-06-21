@@ -47,7 +47,7 @@ app.get('/explore', (req, res) => fetchExplore(res, db));
 app.get('/getphoto', (req, res) => fetchPhoto(req, res, db));
 app.get('/notifications', (req, res) => fetchNotifications(req, res, db));
 app.get('/getbio', (req, res) => fetchBio(req, res, db));
-app.get('/logout', (req, res) => logout(req, res));
+app.get('/logout', (req, res) => logout(req, res, jwt, db));
 
 app.get('/:userName', verify, (req, res) => {
 	fetchProfile(req, res, db);
