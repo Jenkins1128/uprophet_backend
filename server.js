@@ -20,6 +20,7 @@ const { fetchFavoriting } = require('./controllers/favoriting');
 const { favoriteUser, unfavoriteUser } = require('./controllers/favoriteButton');
 const { fetchBio, saveBio } = require('./controllers/userbio');
 const { verify } = require('./controllers/authenticate');
+const { changePasswordSignin, changePassword } = require('./controllers/changePassword');
 const SITE_KEY = 'tIVLEabZMrxm!%4ZHJWnXAjxbPt4mYGtyb!@$%&^%VQJsxGjOIdej#OT3EhCpxqC5Bu6KSOJM$$##VJV9jLF5uWiiFXm1G';
 const NONCE_SALT = 'fxmAMC5TiY2_)(eh2DfbOOX4*&F73ldggm8KZP35N48t3OVbTaoOpaOlLydef#_+kvusgNgafnuujTPdazfzqpDy';
 
@@ -69,6 +70,8 @@ app.post('/uploadphoto', (req, res) => uploadPhoto(req, res, db));
 app.post('/favorite', (req, res) => favoriteUser(req, res, db));
 app.post('/unfavorite', (req, res) => unfavoriteUser(req, res, db));
 app.post('/savebio', (req, res) => saveBio(req, res, db));
+app.post('/changePasswordSignIn', (req, res) => changePasswordSignin(req, res, db, crypto, NONCE_SALT, SITE_KEY));
+app.post('/changePassword', (req, res) => changePassword(req, res, db, crypto, NONCE_SALT, SITE_KEY));
 
 app.listen(process.env.PORT, () => {
 	console.log(`app is running on port 3000`);
