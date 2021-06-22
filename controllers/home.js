@@ -3,7 +3,7 @@ const fetchHome = async (req, res, db, jwt, refreshToken) => {
 
 	const trx = await db.transaction();
 	try {
-		//refresh token
+		//get user from access token
 		const { id, username } = await refreshToken(req, res, jwt, db);
 
 		console.log(id + ' ' + username);
@@ -52,18 +52,25 @@ const fetchHome = async (req, res, db, jwt, refreshToken) => {
 	}
 };
 
-const createQuote = async (req, res, db) => {
-	const { userName, title, quote, datePosted } = req.body;
+const createQuote = async (req, res, db, jwt) => {
+	const { title, quote } = req.body;
 
+	const trx = db.transaction();
 	try {
-		const quoteId = await db('quotes').insert({
-			user_name: userName,
+		//get user from access token
+		const { username } = await refreshToken(req, res, jwt, db);
+
+		const quoteId = await trx('quotes').insert({
+			user_name: username,
 			title: title,
 			quote: quote,
-			date_posted: datePosted
+			date_posted: new Date().toLocaleString('default', { dateStyle: 'medium', timeStyle: 'short' })
 		});
 
-		res.status(200).json(quoteId[0]);
+		const extractedQuote = await trx('quotes').select('*').where('id', quoteId[0]);
+		const finalQuote = { ...extractedQuote[0], likeCount: 0, didLike: false };
+		console.log(finalQuote);
+		res.json(finalQuote);
 	} catch {
 		res.sendStatus(400);
 	}

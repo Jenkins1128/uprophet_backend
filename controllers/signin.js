@@ -27,7 +27,6 @@ const logout = async (req, res, jwt, db) => {
 };
 
 const refreshToken = async (req, res, jwt, db) => {
-	//TODO - PROBLEM, SENDING ACCESS TOKEN IN THIS FUNCTION
 	let accessToken = req.cookies.upUserId;
 	console.log(accessToken);
 	if (!accessToken) {
@@ -41,10 +40,11 @@ const refreshToken = async (req, res, jwt, db) => {
 		console.log('ACCESS TOKEN VERIFIED base64Payload: ' + base64Payload);
 		const payload = JSON.parse(Buffer.from(base64Payload, 'base64').toString('utf-8'));
 		return payload;
-	} catch {}
+	} catch {
+		console.log('ACCESS TOKEN FAILED base64Payload');
+	}
 
 	const base64Payload = accessToken.split('.')[1];
-	console.log('ACCESS TOKEN FAILED base64Payload: ' + base64Payload);
 
 	const payload = JSON.parse(Buffer.from(base64Payload, 'base64').toString('utf-8'));
 
