@@ -52,26 +52,30 @@ const fetchHome = async (req, res, db, jwt, refreshToken) => {
 	}
 };
 
-const createQuote = async (req, res, db, jwt) => {
+const createQuote = async (req, res, db, jwt, refreshToken) => {
 	const { title, quote } = req.body;
-
-	const trx = db.transaction();
+	console.log(title, quote);
+	const trx = await db.transaction();
 	try {
 		//get user from access token
 		const { username } = await refreshToken(req, res, jwt, db);
+		console.log(username);
 
 		const quoteId = await trx('quotes').insert({
 			user_name: username,
 			title: title,
 			quote: quote,
-			date_posted: new Date().toLocaleString('default', { dateStyle: 'medium', timeStyle: 'short' })
+			date_posted: new Date().toISOString().replace('T', ' ').substr(0, 19)
 		});
-
+		console.log(quoteId[0]);
 		const extractedQuote = await trx('quotes').select('*').where('id', quoteId[0]);
+		console.log(extractedQuote);
 		const finalQuote = { ...extractedQuote[0], likeCount: 0, didLike: false };
 		console.log(finalQuote);
 		res.json(finalQuote);
+		await trx.commit();
 	} catch {
+		await trx.rollback();
 		res.sendStatus(400);
 	}
 };

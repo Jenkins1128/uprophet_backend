@@ -63,7 +63,7 @@ app.get('/:userName/favoriting', (req, res) => {
 	fetchFavoriting(req, res, db);
 });
 
-app.post('/createQuote', (req, res) => createQuote(req, res, db, jwt));
+app.post('/createQuote', (req, res) => createQuote(req, res, db, jwt, refreshToken));
 app.post('/signin', (req, res) => handleSignin(req, res, db, crypto, NONCE_SALT, SITE_KEY, jwt));
 app.post('/signup', (req, res) => handleSignup(req, res, db, crypto, NONCE_SALT, SITE_KEY));
 app.post('/like', (req, res) => likeQuote(req, res, db));
