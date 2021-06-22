@@ -5,6 +5,7 @@ const app = express();
 const cors = require('cors');
 const crypto = require('crypto');
 const cookieParser = require('cookie-parser');
+const nodemailer = require('nodemailer');
 const fileUpload = require('express-fileupload');
 const { handleSignin, refreshToken, logout } = require('./controllers/signin');
 const { handleSignup } = require('./controllers/signup');
@@ -21,6 +22,7 @@ const { favoriteUser, unfavoriteUser } = require('./controllers/favoriteButton')
 const { fetchBio, saveBio } = require('./controllers/userbio');
 const { verify } = require('./controllers/authenticate');
 const { changePasswordSignin, changePassword } = require('./controllers/changePassword');
+const { forgotPassword } = require('./controllers/forgotPassword');
 const SITE_KEY = 'tIVLEabZMrxm!%4ZHJWnXAjxbPt4mYGtyb!@$%&^%VQJsxGjOIdej#OT3EhCpxqC5Bu6KSOJM$$##VJV9jLF5uWiiFXm1G';
 const NONCE_SALT = 'fxmAMC5TiY2_)(eh2DfbOOX4*&F73ldggm8KZP35N48t3OVbTaoOpaOlLydef#_+kvusgNgafnuujTPdazfzqpDy';
 
@@ -48,6 +50,7 @@ app.get('/explore', (req, res) => fetchExplore(res, db));
 app.get('/getphoto', (req, res) => fetchPhoto(req, res, db));
 app.get('/notifications', (req, res) => fetchNotifications(req, res, db));
 app.get('/getbio', (req, res) => fetchBio(req, res, db));
+
 app.get('/logout', (req, res) => logout(req, res, jwt, db));
 
 app.get('/:userName', verify, (req, res) => {
@@ -72,6 +75,7 @@ app.post('/unfavorite', (req, res) => unfavoriteUser(req, res, db));
 app.post('/savebio', (req, res) => saveBio(req, res, db));
 app.post('/changePasswordSignIn', (req, res) => changePasswordSignin(req, res, db, crypto, NONCE_SALT, SITE_KEY));
 app.post('/changePassword', (req, res) => changePassword(req, res, db, crypto, NONCE_SALT, SITE_KEY));
+app.post('/forgotPassword', (req, res) => forgotPassword(req, res, db, crypto, NONCE_SALT, SITE_KEY, nodemailer));
 
 app.listen(process.env.PORT, () => {
 	console.log(`app is running on port 3000`);
