@@ -1,26 +1,19 @@
 const sendMail = async (username, userEmail, tempPassword, nodemailer) => {
-	// Generate test SMTP service account from ethereal.email
-	// Only needed if you don't have a real mail account for testing
-	let testAccount = await nodemailer.createTestAccount();
 
 	// create reusable transporter object using the default SMTP transport
 	let transporter = nodemailer.createTransport({
-		host: 'smtp.ethereal.email',
-		port: 587,
-		secure: false, // true for 465, false for other ports
-		auth: {
-			user: testAccount.user, // generated ethereal user
-			pass: testAccount.pass // generated ethereal password
-		}
-	});
-
+  service: 'gmail',
+  auth: {
+    user: 'uprophetworld@gmail.com',
+    pass: process.env.GMAIL_PASS
+  }
+});
 	// send mail with defined transport object
 	let info = await transporter.sendMail({
 		from: '"Uprophet" <uprophetworld@gmail.com>', // sender address
 		to: userEmail, // list of receivers
 		subject: 'Uprophet Temporary Password', // Subject line
-		text: `Temporary Password: ${tempPassword}`, // plain text body
-		html: `<b><strong>${tempPassword}</strong></b>` // html body
+		html: `Hello ${username},<br><br>Here is your temporary password: <strong>${tempPassword}</strong> <br><br> <a href="https://uprophet.com/changepassword">Change Password</a>` // html body
 	});
 
 	console.log('Message sent: %s', info.messageId);
@@ -70,12 +63,17 @@ const changePassword = async (res, username, db, crypto, NONCE_SALT, SITE_KEY) =
 };
 
 const forgotPassword = async (req, res, db, crypto, NONCE_SALT, SITE_KEY, nodemailer) => {
-	const { username } = req.body;
+	const { username, email } = req.body;
 	console.log(username);
 	try {
+		const userEmail = await db('users').select('email').where('user_name', username);
+		console.log('userEmail', userEmail[0]);
+		if(!userEmail.length && userEmail[0].email !== email){
+			console.log('error', userEmail);
+			throw new Exception();
+		}
 		const tempPass = await changePassword(res, username, db, crypto, NONCE_SALT, SITE_KEY);
 		console.log('tempPass ', tempPass);
-		const userEmail = await db('users').select('email').where('user_name', username);
 		await sendMail(username, userEmail[0].email, tempPass, nodemailer);
 		res.sendStatus(200);
 		//send pass to email
