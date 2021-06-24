@@ -7,13 +7,14 @@ const crypto = require('crypto');
 const cookieParser = require('cookie-parser');
 const nodemailer = require('nodemailer');
 const fileUpload = require('express-fileupload');
+const { getUser } = require('./controllers/user');
 const { handleSignin, refreshToken, logout } = require('./controllers/signin');
 const { handleSignup } = require('./controllers/signup');
 const { fetchHome, createQuote } = require('./controllers/home');
 const { likeQuote, unlikeQuote } = require('./controllers/likeButton');
 const { addComment } = require('./controllers/quoteComments');
 const { fetchExplore } = require('./controllers/explore');
-const { uploadPhoto } = require('./controllers/userphoto');
+const { uploadPhoto, fetchPhoto } = require('./controllers/userphoto');
 const { fetchNotifications } = require('./controllers/notifications');
 const { fetchProfile } = require('./controllers/profile');
 const { fetchFavoriters } = require('./controllers/favoriters');
@@ -47,10 +48,10 @@ app.get('/', (req, res) => {
 
 app.get('/quote/:quoteId', (req, res) => fetchComments(req, res, db));
 app.get('/explore', (req, res) => fetchExplore(res, db));
-app.get('/getphoto', (req, res) => fetchPhoto(req, res, db));
+
 app.get('/notifications', (req, res) => fetchNotifications(req, res, db));
 app.get('/getbio', (req, res) => fetchBio(req, res, db));
-
+app.get('/currentUser', (req, res) => getUser(req, res, db, jwt, refreshToken));
 app.get('/logout', (req, res) => logout(req, res, jwt, db));
 
 app.get('/:userName', verify, (req, res) => {
@@ -73,6 +74,7 @@ app.post('/uploadphoto', (req, res) => uploadPhoto(req, res, db));
 app.post('/favorite', (req, res) => favoriteUser(req, res, db));
 app.post('/unfavorite', (req, res) => unfavoriteUser(req, res, db));
 app.post('/savebio', (req, res) => saveBio(req, res, db));
+app.post('/getPhoto', (req, res) => fetchPhoto(req, res, db));
 app.post('/changePasswordSignIn', (req, res) => changePasswordSignin(req, res, db, crypto, NONCE_SALT, SITE_KEY));
 app.post('/changePassword', (req, res) => changePassword(req, res, db, crypto, NONCE_SALT, SITE_KEY));
 app.post('/forgotPassword', (req, res) => forgotPassword(req, res, db, crypto, NONCE_SALT, SITE_KEY, nodemailer));

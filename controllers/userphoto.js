@@ -17,11 +17,15 @@ const uploadPhoto = async (req, res, db) => {
 };
 
 const fetchPhoto = async (req, res, db) => {
-	const { userName } = req.body;
+	const { username } = req.body;
+	console.log(username);
 	try {
-		const img = await db('users').select('photo').where('user_name', userName);
+		const img = await db('users').select('photo').where('user_name', username);
+
+		const buffer = img[0]['photo'];
+		//console.log(buffer);
 		if (img) {
-			res.json({ photo: img[0]['photo'].toString('base64') });
+			res.json({ photo: buffer.toString() });
 		} else {
 			res.status(400).json('No such image');
 		}
