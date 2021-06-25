@@ -1,14 +1,16 @@
-const likeQuote = async (req, res, db) => {
-	const { userId, userName, quoteId } = req.body;
-	console.log(userId, userName, quoteId);
+const likeQuote = async (req, res, db, jwt, refreshToken) => {
+	const { quoteId } = req.body;
 	const trx = await db.transaction();
 	try {
+		//get username, id from access token
+		const { id, username } = await refreshToken(req, res, jwt, db);
+		console.log('id', id, 'like ', quoteId);
 		await trx('likes').insert({
-			users_id: userId,
+			users_id: id,
 			quotes_id: quoteId
 		});
 		await trx('like_notifications').insert({
-			notice: `${userName} liked your quote.`,
+			notice: `${username} liked your quote.`,
 			quotes_id: quoteId
 		});
 		res.sendStatus(200);
@@ -19,13 +21,16 @@ const likeQuote = async (req, res, db) => {
 	}
 };
 
-const unlikeQuote = async (req, res, db) => {
-	const { userId, quoteId } = req.body;
+const unlikeQuote = async (req, res, db, jwt, refreshToken) => {
+	const { quoteId } = req.body;
 
 	try {
+		//get username, id from access token
+		const { id } = await refreshToken(req, res, jwt, db);
+		console.log('id', id, 'unlike ', quoteId);
 		await db('likes')
 			.where({
-				users_id: userId,
+				users_id: id,
 				quotes_id: quoteId
 			})
 			.del();
