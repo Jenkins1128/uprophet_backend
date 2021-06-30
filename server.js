@@ -48,8 +48,7 @@ app.get('/', (req, res) => {
 	fetchHome(req, res, db, jwt, refreshToken);
 });
 
-app.get('/explore', (req, res) => fetchExplore(res, db));
-
+app.get('/explore', (req, res) => fetchExplore(req, res, db, jwt, refreshToken));
 app.get('/notifications', (req, res) => fetchNotifications(req, res, db));
 app.get('/getNotificationCount', (req, res) => getNotificationCount(req, res, db, jwt, refreshToken));
 app.get('/getbio', (req, res) => fetchBio(req, res, db));
@@ -79,6 +78,7 @@ app.post('/savebio', (req, res) => saveBio(req, res, db));
 app.post('/getPhoto', (req, res) => fetchPhoto(req, res, db));
 app.post('/getComments', (req, res) => fetchComments(req, res, db));
 app.post('/getQuotePost', (req, res) => getQuotePost(req, res, db, jwt, refreshToken));
+
 app.post('/changePasswordSignIn', (req, res) => changePasswordSignin(req, res, db, crypto, NONCE_SALT, SITE_KEY));
 app.post('/changePassword', (req, res) => changePassword(req, res, db, crypto, NONCE_SALT, SITE_KEY));
 app.post('/forgotPassword', (req, res) => forgotPassword(req, res, db, crypto, NONCE_SALT, SITE_KEY, nodemailer));
