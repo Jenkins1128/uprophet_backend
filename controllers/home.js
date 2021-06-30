@@ -35,14 +35,6 @@ const fetchHome = async (req, res, db, jwt, refreshToken) => {
 		const finalQuotes = quotesWithLikeCount.map((quoteWithLikeCount) => {
 			return { ...quoteWithLikeCount, didLike: quoteIdSet.has(quoteWithLikeCount['id']) ? true : false };
 		});
-		//Add notification count
-		const newLikeNotificationsCount = await trx('like_notifications')
-			.count('like_notifications.id as newLikeNotifications')
-			.join('quotes', 'quotes.id', 'like_notifications.quotes_id')
-			.where({ 'quotes.user_name': username, 'like_notifications.read': 0 });
-		const newFavoriteNotificationsCount = await trx('favorite_notifications').count('favorite_notifications.id as newFavoriteNotifications').where({ 'favorite_notifications.to_user': username, 'favorite_notifications.read': 0 });
-		finalQuotes.push({ notificationCount: newLikeNotificationsCount[0]['newLikeNotifications'] + newFavoriteNotificationsCount[0]['newFavoriteNotifications'] });
-		console.log(finalQuotes);
 		res.json(finalQuotes);
 		await trx.commit();
 	} catch (error) {

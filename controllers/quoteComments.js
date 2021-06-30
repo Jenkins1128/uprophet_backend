@@ -1,5 +1,5 @@
 const fetchComments = async (req, res, db) => {
-	const { quoteId } = req.params;
+	const { quoteId } = req.body;
 	try {
 		const commentDetails = await db('comments').select('*').where('quotes_id', quoteId);
 		res.json(commentDetails);
@@ -8,21 +8,27 @@ const fetchComments = async (req, res, db) => {
 	}
 };
 
-const addComment = async (req, res, db) => {
-	const { quoteId, comment, commenter } = req.body;
+const addComment = async (req, res, db, jwt, refreshToken) => {
+	const { quoteId, comment } = req.body;
+	console.log(quoteId, comment);
 	const trx = await db.transaction();
+	const date = new Date().toISOString().replace('T', ' ').substr(0, 19);
+	console.log('date', date);
 	try {
-		await trx('comments').insert({
+		const { username } = await refreshToken(req, res, jwt, db);
+		const commentId = await trx('comments').insert({
 			quotes_id: quoteId,
 			comment: comment,
-			commenter: commenter
+			commenter: username,
+			date_posted: date
 		});
-		await trx('like_notifications').insert({
-			user_name: commenter,
-			notice: `${commenter} commented on your quote.`,
+		console.log('Comment inserted');
+		await trx('quote_notifications').insert({
+			notice: `${username} commented on your quote.`,
 			quotes_id: quoteId
 		});
-		res.sendStatus(200);
+		console.log('Noti inserted');
+		res.json({ id: commentId[0], quotes_id: quoteId, comment: comment, commenter: username, date_posted: date });
 		await trx.commit();
 	} catch {
 		await trx.rollback();

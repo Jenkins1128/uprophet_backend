@@ -28,7 +28,7 @@ const logout = async (req, res, jwt, db) => {
 
 const refreshToken = async (req, res, jwt, db) => {
 	let accessToken = req.cookies.upUserId;
-	console.log(accessToken);
+	//console.log(accessToken);
 	if (!accessToken) {
 		return res.status(403).send();
 	}
@@ -37,18 +37,18 @@ const refreshToken = async (req, res, jwt, db) => {
 	try {
 		jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
 		const base64Payload = accessToken.split('.')[1];
-		console.log('ACCESS TOKEN VERIFIED base64Payload: ' + base64Payload);
+		//console.log('ACCESS TOKEN VERIFIED base64Payload: ' + base64Payload);
 		const payload = JSON.parse(Buffer.from(base64Payload, 'base64').toString('utf-8'));
 		return payload;
 	} catch {
-		console.log('ACCESS TOKEN FAILED base64Payload');
+		//console.log('ACCESS TOKEN FAILED base64Payload');
 	}
 
 	const base64Payload = accessToken.split('.')[1];
 
 	const payload = JSON.parse(Buffer.from(base64Payload, 'base64').toString('utf-8'));
 
-	console.log('payload: ' + payload);
+	//console.log('payload: ' + payload);
 	//retrieve the refresh token from database
 	let refreshToken;
 	try {
@@ -60,7 +60,7 @@ const refreshToken = async (req, res, jwt, db) => {
 	if (!refreshToken.length) {
 		return res.sendStatus(403);
 	}
-	console.log('refreshToken', refreshToken[0].refresh_token);
+	//console.log('refreshToken', refreshToken[0].refresh_token);
 
 	//verify the refresh token
 	try {
@@ -73,12 +73,12 @@ const refreshToken = async (req, res, jwt, db) => {
 		algorithm: 'HS256',
 		expiresIn: process.env.ACCESS_TOKEN_LIFE
 	});
-	console.log('newToken ' + newToken);
+	//console.log('newToken ' + newToken);
 	//res.setHeader('Set-Cookie', cookie.serialize('upUserId', newToken, { httpOnly: true }));
 	res.cookie('upUserId', newToken, { httpOnly: true });
 	const base64Payload2 = newToken.split('.')[1];
 	const newTokenPayload = JSON.parse(Buffer.from(base64Payload2, 'base64').toString('utf-8'));
-	console.log('newTokenPayload: ' + newTokenPayload);
+	//console.log('newTokenPayload: ' + newTokenPayload);
 	return newTokenPayload;
 };
 
