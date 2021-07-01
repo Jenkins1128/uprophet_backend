@@ -4,15 +4,16 @@ const likeQuote = async (req, res, db, jwt, refreshToken) => {
 	try {
 		//get username, id from access token
 		const { id, username } = await refreshToken(req, res, jwt, db);
-		console.log('id', id, 'like ', quoteId);
+
 		await trx('likes').insert({
 			users_id: id,
 			quotes_id: quoteId
 		});
-		await trx('like_notifications').insert({
+		await trx('quote_notifications').insert({
 			notice: `${username} liked your quote.`,
 			quotes_id: quoteId
 		});
+		console.log('id', id, 'like ', quoteId);
 		res.sendStatus(200);
 		await trx.commit();
 	} catch (error) {

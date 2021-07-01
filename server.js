@@ -26,6 +26,7 @@ const { changePasswordSignin, changePassword } = require('./controllers/changePa
 const { forgotPassword } = require('./controllers/forgotPassword');
 const { getNotificationCount } = require('./controllers/notificationCount');
 const { getQuotePost } = require('./controllers/quotePost');
+const { getSearchResults } = require('./controllers/search');
 const SITE_KEY = 'tIVLEabZMrxm!%4ZHJWnXAjxbPt4mYGtyb!@$%&^%VQJsxGjOIdej#OT3EhCpxqC5Bu6KSOJM$$##VJV9jLF5uWiiFXm1G';
 const NONCE_SALT = 'fxmAMC5TiY2_)(eh2DfbOOX4*&F73ldggm8KZP35N48t3OVbTaoOpaOlLydef#_+kvusgNgafnuujTPdazfzqpDy';
 
@@ -78,6 +79,7 @@ app.post('/savebio', (req, res) => saveBio(req, res, db));
 app.post('/getPhoto', (req, res) => fetchPhoto(req, res, db));
 app.post('/getComments', (req, res) => fetchComments(req, res, db));
 app.post('/getQuotePost', (req, res) => getQuotePost(req, res, db, jwt, refreshToken));
+app.post('/search', (req, res) => getSearchResults(req, res, db, jwt, refreshToken));
 
 app.post('/changePasswordSignIn', (req, res) => changePasswordSignin(req, res, db, crypto, NONCE_SALT, SITE_KEY));
 app.post('/changePassword', (req, res) => changePassword(req, res, db, crypto, NONCE_SALT, SITE_KEY));
