@@ -16,12 +16,11 @@ const { addComment, fetchComments } = require('./controllers/quoteComments');
 const { fetchExplore } = require('./controllers/explore');
 const { uploadPhoto, fetchPhoto } = require('./controllers/userphoto');
 const { fetchNotifications } = require('./controllers/notifications');
-const { fetchProfile } = require('./controllers/profile');
+const { fetchProfileQuotes, getUserInfo } = require('./controllers/profile');
 const { fetchFavoriters } = require('./controllers/favoriters');
 const { fetchFavoriting } = require('./controllers/favoriting');
 const { favoriteUser, unfavoriteUser } = require('./controllers/favoriteButton');
 const { fetchBio, saveBio } = require('./controllers/userbio');
-const { verify } = require('./controllers/authenticate');
 const { changePasswordSignin, changePassword } = require('./controllers/changePassword');
 const { forgotPassword } = require('./controllers/forgotPassword');
 const { getNotificationCount } = require('./controllers/notificationCount');
@@ -56,14 +55,11 @@ app.get('/getbio', (req, res) => fetchBio(req, res, db));
 app.get('/currentUser', (req, res) => getUser(req, res, db, jwt, refreshToken));
 app.get('/logout', (req, res) => logout(req, res, jwt, db));
 
-app.get('/:userName', verify, (req, res) => {
-	fetchProfile(req, res, db);
+app.post('/favoriters', (req, res) => {
+	fetchFavoriters(req, res, db, jwt, refreshToken);
 });
-app.get('/:userName/favoriters', (req, res) => {
-	fetchFavoriters(req, res, db);
-});
-app.get('/:userName/favoriting', (req, res) => {
-	fetchFavoriting(req, res, db);
+app.post('/favoriting', (req, res) => {
+	fetchFavoriting(req, res, db, jwt, refreshToken);
 });
 
 app.post('/createQuote', (req, res) => createQuote(req, res, db, jwt, refreshToken));
@@ -73,13 +69,19 @@ app.post('/like', (req, res) => likeQuote(req, res, db, jwt, refreshToken));
 app.post('/unlike', (req, res) => unlikeQuote(req, res, db, jwt, refreshToken));
 app.post('/addComment', (req, res) => addComment(req, res, db, jwt, refreshToken));
 app.post('/uploadphoto', (req, res) => uploadPhoto(req, res, db));
-app.post('/favorite', (req, res) => favoriteUser(req, res, db));
-app.post('/unfavorite', (req, res) => unfavoriteUser(req, res, db));
+app.post('/favorite', (req, res) => favoriteUser(req, res, db, jwt, refreshToken));
+app.post('/unfavorite', (req, res) => unfavoriteUser(req, res, db, jwt, refreshToken));
 app.post('/savebio', (req, res) => saveBio(req, res, db));
 app.post('/getPhoto', (req, res) => fetchPhoto(req, res, db));
 app.post('/getComments', (req, res) => fetchComments(req, res, db));
 app.post('/getQuotePost', (req, res) => getQuotePost(req, res, db, jwt, refreshToken));
 app.post('/search', (req, res) => getSearchResults(req, res, db, jwt, refreshToken));
+app.post('/profile', (req, res) => {
+	fetchProfileQuotes(req, res, db, jwt, refreshToken);
+});
+app.post('/userInfo', (req, res) => {
+	getUserInfo(req, res, db);
+});
 
 app.post('/changePasswordSignIn', (req, res) => changePasswordSignin(req, res, db, crypto, NONCE_SALT, SITE_KEY));
 app.post('/changePassword', (req, res) => changePassword(req, res, db, crypto, NONCE_SALT, SITE_KEY));

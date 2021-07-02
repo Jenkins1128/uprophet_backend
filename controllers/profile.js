@@ -1,10 +1,12 @@
-const fetchProfile = async (req, res, db) => {
-	const { userName } = req.params;
+const fetchProfileQuotes = async (req, res, db, jwt, refreshToken) => {
+	const { username } = req.body;
 
 	const trx = await db.transaction();
 	try {
+		const { id } = await refreshToken(req, res, jwt, db);
+
 		//Get the latest quote from each user you are following
-		const userQuoteIds = await trx('quotes').select('id').where('user_name', userName);
+		const userQuoteIds = await trx('quotes').select('id').where('user_name', username);
 		const extractedUserQuoteIds = userQuoteIds.map((userQuoteId) => userQuoteId['id']);
 		const quotes = await trx('quotes').select('*').whereIn('id', extractedUserQuoteIds).orderBy('id', 'desc');
 		//Get quotes with like count added
@@ -18,10 +20,9 @@ const fetchProfile = async (req, res, db) => {
 			return { ...quote, likeCount: quoteLikeCount };
 		});
 		//Add didLike to each quote
-		const userId = await trx('users').select('id').where('user_name', userName);
 		const quoteIds = await trx('likes')
 			.select('quotes_id')
-			.where((builder) => builder.where('users_id', userId).whereIn('quotes_id', extractedUserQuoteIds))
+			.where((builder) => builder.where('users_id', id).whereIn('quotes_id', extractedUserQuoteIds))
 			.groupBy('quotes_id');
 		const quoteIdSet = new Set();
 		quoteIds.forEach((quoteId) => {
@@ -30,13 +31,7 @@ const fetchProfile = async (req, res, db) => {
 		const finalQuotes = quotesWithLikeCount.map((quoteWithLikeCount) => {
 			return { ...quoteWithLikeCount, didLike: quoteIdSet.has(quoteWithLikeCount['id']) ? true : false };
 		});
-		//Add favoriters and favoriting count to final quotes
-		const favoriters = await trx('favoriting').count('to_user as favoriters').where('to_user', userName);
-		const favoriting = await trx('favoriting').count('from_user as favoriting').where('from_user', userName);
-		finalQuotes.push({
-			favoriters: favoriters.length ? favoriters[0]['favoriters'] : 0,
-			favoriting: favoriting.length ? favoriting[0]['favoriting'] : 0
-		});
+		console.log(finalQuotes);
 		res.json(finalQuotes);
 		await trx.commit();
 	} catch (error) {
@@ -45,4 +40,32 @@ const fetchProfile = async (req, res, db) => {
 	}
 };
 
-module.exports = { fetchProfile };
+const getUserInfo = async (req, res, db) => {
+	const { username } = req.body;
+	const trx = await db.transaction();
+	console.log('username', username);
+	try {
+		//favoriters, favoriting cound
+		const favoriters = await trx('favoriting').count('to_user as favoriters').where('to_user', username);
+		const favoriting = await trx('favoriting').count('from_user as favoriting').where('from_user', username);
+		const favoritingCounts = {
+			favoriters: favoriters.length ? favoriters[0]['favoriters'] : 0,
+			favoriting: favoriting.length ? favoriting[0]['favoriting'] : 0
+		};
+		console.log(favoritingCounts);
+		//bio
+		const bio = await trx('users').select('bio').where('user_name', username);
+		console.log(bio);
+
+		const userInfo = { favoriters: favoritingCounts.favoriters, favoriting: favoritingCounts.favoriting, bio: bio[0].bio };
+
+		console.log(userInfo);
+		res.json(userInfo);
+		await trx.commit();
+	} catch {
+		await trx.rollback();
+		res.sendStats(400);
+	}
+};
+
+module.exports = { fetchProfileQuotes, getUserInfo };
