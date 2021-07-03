@@ -16,7 +16,7 @@ const getSearchResults = async (req, res, db, jwt, refreshToken) => {
 			usersSet.add(user['to_user']);
 		});
 		const finalResultUsers = results.map((user) => {
-			return { ...user, didFavorite: usersSet.has(user['user_name']) ? true : false };
+			return { ...user, currentUser: username, didFavorite: usersSet.has(user['user_name']) ? true : false };
 		});
 		res.json(finalResultUsers);
 		await trx.commit();

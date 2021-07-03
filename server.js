@@ -49,7 +49,7 @@ app.get('/', (req, res) => {
 });
 
 app.get('/explore', (req, res) => fetchExplore(req, res, db, jwt, refreshToken));
-app.get('/notifications', (req, res) => fetchNotifications(req, res, db));
+app.get('/notifications', (req, res) => fetchNotifications(req, res, db, jwt, refreshToken));
 app.get('/getNotificationCount', (req, res) => getNotificationCount(req, res, db, jwt, refreshToken));
 app.get('/getbio', (req, res) => fetchBio(req, res, db));
 app.get('/currentUser', (req, res) => getUser(req, res, db, jwt, refreshToken));
@@ -80,7 +80,7 @@ app.post('/profile', (req, res) => {
 	fetchProfileQuotes(req, res, db, jwt, refreshToken);
 });
 app.post('/userInfo', (req, res) => {
-	getUserInfo(req, res, db);
+	getUserInfo(req, res, db, jwt, refreshToken);
 });
 
 app.post('/changePasswordSignIn', (req, res) => changePasswordSignin(req, res, db, crypto, NONCE_SALT, SITE_KEY));
