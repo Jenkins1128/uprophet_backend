@@ -25,7 +25,8 @@ const addComment = async (req, res, db, jwt, refreshToken) => {
 		console.log('Comment inserted');
 		await trx('quote_notifications').insert({
 			notice: `${username} commented on your quote.`,
-			quotes_id: quoteId
+			quotes_id: quoteId,
+			date: date
 		});
 		console.log('Noti inserted');
 		res.json({ id: commentId[0], quotes_id: quoteId, comment: comment, commenter: username, date_posted: date });

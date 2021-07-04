@@ -16,11 +16,11 @@ const { addComment, fetchComments } = require('./controllers/quoteComments');
 const { fetchExplore } = require('./controllers/explore');
 const { uploadPhoto, fetchPhoto } = require('./controllers/userphoto');
 const { fetchNotifications } = require('./controllers/notifications');
-const { fetchProfileQuotes, getUserInfo } = require('./controllers/profile');
+const { fetchProfileQuotes, getUserInfo, getCurrentUserInfo } = require('./controllers/profile');
 const { fetchFavoriters } = require('./controllers/favoriters');
 const { fetchFavoriting } = require('./controllers/favoriting');
 const { favoriteUser, unfavoriteUser } = require('./controllers/favoriteButton');
-const { fetchBio, saveBio } = require('./controllers/userbio');
+const { saveBio } = require('./controllers/userbio');
 const { changePasswordSignin, changePassword } = require('./controllers/changePassword');
 const { forgotPassword } = require('./controllers/forgotPassword');
 const { getNotificationCount } = require('./controllers/notificationCount');
@@ -39,7 +39,7 @@ const db = require('knex')({
 	}
 });
 
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
 app.use(cors({ credentials: true, origin: true }));
 app.use(fileUpload());
 app.use(cookieParser());
@@ -51,8 +51,8 @@ app.get('/', (req, res) => {
 app.get('/explore', (req, res) => fetchExplore(req, res, db, jwt, refreshToken));
 app.get('/notifications', (req, res) => fetchNotifications(req, res, db, jwt, refreshToken));
 app.get('/getNotificationCount', (req, res) => getNotificationCount(req, res, db, jwt, refreshToken));
-app.get('/getbio', (req, res) => fetchBio(req, res, db));
 app.get('/currentUser', (req, res) => getUser(req, res, db, jwt, refreshToken));
+app.get('/currentUserInfo', (req, res) => getCurrentUserInfo(req, res, db, jwt, refreshToken));
 app.get('/logout', (req, res) => logout(req, res, jwt, db));
 
 app.post('/favoriters', (req, res) => {
@@ -68,10 +68,10 @@ app.post('/signup', (req, res) => handleSignup(req, res, db, crypto, NONCE_SALT,
 app.post('/like', (req, res) => likeQuote(req, res, db, jwt, refreshToken));
 app.post('/unlike', (req, res) => unlikeQuote(req, res, db, jwt, refreshToken));
 app.post('/addComment', (req, res) => addComment(req, res, db, jwt, refreshToken));
-app.post('/uploadphoto', (req, res) => uploadPhoto(req, res, db));
+app.post('/uploadPic', (req, res) => uploadPhoto(req, res, db, jwt, refreshToken));
 app.post('/favorite', (req, res) => favoriteUser(req, res, db, jwt, refreshToken));
 app.post('/unfavorite', (req, res) => unfavoriteUser(req, res, db, jwt, refreshToken));
-app.post('/savebio', (req, res) => saveBio(req, res, db));
+app.post('/savebio', (req, res) => saveBio(req, res, db, jwt, refreshToken));
 app.post('/getPhoto', (req, res) => fetchPhoto(req, res, db));
 app.post('/getComments', (req, res) => fetchComments(req, res, db));
 app.post('/getQuotePost', (req, res) => getQuotePost(req, res, db, jwt, refreshToken));

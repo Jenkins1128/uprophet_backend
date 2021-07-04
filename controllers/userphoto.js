@@ -1,15 +1,17 @@
-const uploadPhoto = async (req, res, db) => {
-	const { name, data, userName } = req.files.pic;
-	if (!name || !data || !userName) {
+const uploadPhoto = async (req, res, db, jwt, refreshToken) => {
+	const { name, image } = req.body;
+	if (!name || !image) {
 		return res.status(400).json('form incomplete');
 	}
+	console.log('photo name: ', name);
 	try {
+		const { username } = await refreshToken(req, res, jwt, db);
 		await db('users')
 			.update({
 				photo_name: name,
-				photo: data
+				photo: image
 			})
-			.where('user_name', userName);
+			.where('user_name', username);
 		res.sendStatus(200);
 	} catch (error) {
 		res.sendStatus(400);

@@ -11,7 +11,8 @@ const favoriteUser = async (req, res, db, jwt, refreshToken) => {
 		});
 		await trx('favorite_notifications').insert({
 			notice: `${username} favorited you.`,
-			to_user: toUser
+			to_user: toUser,
+			date: new Date().toISOString().replace('T', ' ').substr(0, 19)
 		});
 		res.sendStatus(200);
 		await trx.commit();

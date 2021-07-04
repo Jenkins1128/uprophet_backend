@@ -11,7 +11,8 @@ const likeQuote = async (req, res, db, jwt, refreshToken) => {
 		});
 		await trx('quote_notifications').insert({
 			notice: `${username} liked your quote.`,
-			quotes_id: quoteId
+			quotes_id: quoteId,
+			date: new Date().toISOString().replace('T', ' ').substr(0, 19)
 		});
 		console.log('id', id, 'like ', quoteId);
 		res.sendStatus(200);

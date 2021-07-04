@@ -78,4 +78,18 @@ const getUserInfo = async (req, res, db, jwt, refreshToken) => {
 	}
 };
 
-module.exports = { fetchProfileQuotes, getUserInfo };
+const getCurrentUserInfo = async (req, res, db, jwt, refreshToken) => {
+	try {
+		const { username } = await refreshToken(req, res, jwt, db);
+		//bio
+		const bio = await db('users').select('bio').where('user_name', username);
+		console.log(bio);
+		const userInfo = { currentUser: username, bio: bio[0].bio };
+		console.log(userInfo);
+		res.json(userInfo);
+	} catch {
+		res.sendStatus(400);
+	}
+};
+
+module.exports = { fetchProfileQuotes, getUserInfo, getCurrentUserInfo };
