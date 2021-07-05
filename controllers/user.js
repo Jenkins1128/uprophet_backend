@@ -4,7 +4,7 @@ const getUser = async (req, res, db, jwt, refreshToken) => {
 		const { username } = await refreshToken(req, res, jwt, db);
 		res.json(username);
 	} catch (error) {
-		res.sendStatus(400);
+		res.sendStatus(error.message);
 	}
 };
 

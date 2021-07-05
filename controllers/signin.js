@@ -30,7 +30,7 @@ const refreshToken = async (req, res, jwt, db) => {
 	let accessToken = req.cookies.upUserId;
 	//console.log(accessToken);
 	if (!accessToken) {
-		return res.status(403).send();
+		throw new Error(403);
 	}
 
 	//verify the acess token
@@ -40,9 +40,7 @@ const refreshToken = async (req, res, jwt, db) => {
 		//console.log('ACCESS TOKEN VERIFIED base64Payload: ' + base64Payload);
 		const payload = JSON.parse(Buffer.from(base64Payload, 'base64').toString('utf-8'));
 		return payload;
-	} catch {
-		//console.log('ACCESS TOKEN FAILED base64Payload');
-	}
+	} catch {}
 
 	const base64Payload = accessToken.split('.')[1];
 
@@ -54,11 +52,11 @@ const refreshToken = async (req, res, jwt, db) => {
 	try {
 		refreshToken = await db('users').select('refresh_token').where('user_name', payload.username);
 	} catch (error) {
-		return res.sendStatus(400);
+		throw new Error(400);
 	}
 
 	if (!refreshToken.length) {
-		return res.sendStatus(403);
+		throw new Error(403);
 	}
 	//console.log('refreshToken', refreshToken[0].refresh_token);
 
@@ -66,7 +64,7 @@ const refreshToken = async (req, res, jwt, db) => {
 	try {
 		jwt.verify(refreshToken[0].refresh_token, process.env.REFRESH_TOKEN_SECRET);
 	} catch (e) {
-		return res.sendStatus(403);
+		throw new Error(403);
 	}
 
 	let newToken = jwt.sign({ id: payload.id, username: payload.username }, process.env.ACCESS_TOKEN_SECRET, {

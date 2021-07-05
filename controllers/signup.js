@@ -38,7 +38,7 @@ const handleSignup = async (req, res, db, crypto, NONCE_SALT, SITE_KEY) => {
 		await trx.commit();
 	} catch (err) {
 		await trx.rollback();
-		res.status(400).json('unable to register: ' + err);
+		res.sendStatus(400);
 	}
 };
 

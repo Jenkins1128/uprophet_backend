@@ -1,13 +1,12 @@
 const sendMail = async (username, userEmail, tempPassword, nodemailer) => {
-
 	// create reusable transporter object using the default SMTP transport
 	let transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: 'uprophetworld@gmail.com',
-    pass: process.env.GMAIL_PASS
-  }
-});
+		service: 'gmail',
+		auth: {
+			user: 'uprophetworld@gmail.com',
+			pass: process.env.GMAIL_PASS
+		}
+	});
 	// send mail with defined transport object
 	let info = await transporter.sendMail({
 		from: '"Uprophet" <uprophetworld@gmail.com>', // sender address
@@ -68,7 +67,7 @@ const forgotPassword = async (req, res, db, crypto, NONCE_SALT, SITE_KEY, nodema
 	try {
 		const userEmail = await db('users').select('email').where('user_name', username);
 		console.log('userEmail', userEmail[0]);
-		if(!userEmail.length && userEmail[0].email !== email){
+		if (userEmail.length && userEmail[0].email !== email) {
 			console.log('error', userEmail);
 			throw new Exception();
 		}
