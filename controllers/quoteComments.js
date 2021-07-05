@@ -2,6 +2,7 @@ const fetchComments = async (req, res, db) => {
 	const { quoteId } = req.body;
 	try {
 		const commentDetails = await db('comments').select('*').where('quotes_id', quoteId);
+		commentDetails.sort((a, b) => b.date_posted - a.date_posted);
 		res.json(commentDetails);
 	} catch (error) {
 		res.sendStatus(400);
