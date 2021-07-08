@@ -4,8 +4,8 @@
 	"description": "",
 	"main": "script.js",
 	"scripts": {
-		"test": "set NODE_ENV=development && nodemon server.js",
-		"start": "set NODE_ENV=production && nodemon server.js"
+		"test": "NODE_ENV=development nodemon server.js",
+		"start": "NODE_ENV=production nodemon server.js"
 	},
 	"author": "Isaiah Jenkins",
 	"license": "ISC",

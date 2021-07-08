@@ -26,7 +26,8 @@ const addComment = async (req, res, db, jwt, accessTokenPayload) => {
 			quotes_id: quoteId,
 			date: date
 		});
-		res.json({ id: commentId[0], quotes_id: quoteId, comment: comment, commenter: username, date_posted: date });
+		const addedComment = await trx('comments').select('*').where('id', commentId[0]);
+		res.json({ ...addedComment[0] });
 		await trx.commit();
 	} catch {
 		await trx.rollback();

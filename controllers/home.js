@@ -31,6 +31,7 @@ const fetchHome = async (req, res, db, jwt, accessTokenPayload) => {
 		const finalQuotes = quotesWithLikeCount.map((quoteWithLikeCount) => {
 			return { ...quoteWithLikeCount, didLike: quoteIdSet.has(quoteWithLikeCount['id']) ? true : false };
 		});
+		finalQuotes.sort((a, b) => b.date_posted - a.date_posted);
 		res.json(finalQuotes);
 		await trx.commit();
 	} catch (error) {
