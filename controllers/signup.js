@@ -12,12 +12,8 @@ const hashPass = (username, password, userreg, crypto, NONCE_SALT, SITE_KEY) => 
 
 const handleSignup = async (req, res, db, crypto, NONCE_SALT, SITE_KEY) => {
 	const { username, name, email, password } = req.body;
-	if (!username || !email || !name || !password || !username.length || !email.length || !name.length || !password.length) {
-		return res.status(400).json('incorrect form submission');
-	}
 	const userreg = new Date().getTime();
 	const hash = hashPass(username, password, userreg, crypto, NONCE_SALT, SITE_KEY);
-
 	const trx = await db.transaction();
 	try {
 		const usersId = await trx('users').insert({
@@ -31,7 +27,6 @@ const handleSignup = async (req, res, db, crypto, NONCE_SALT, SITE_KEY) => {
 			users_id: usersId[0],
 			user_registered: userreg
 		});
-
 		if (loginsId.length) {
 			res.json(loginsId[0]);
 		}

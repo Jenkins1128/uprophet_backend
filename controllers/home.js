@@ -1,12 +1,8 @@
-const fetchHome = async (req, res, db, jwt, refreshToken) => {
-	//const { id, userName } = req.body;
-
+const fetchHome = async (req, res, db, jwt, accessTokenPayload) => {
 	const trx = await db.transaction();
 	try {
 		//get user from access token
-		const { id, username } = await refreshToken(req, res, jwt, db);
-
-		console.log(id + ' ' + username);
+		const { id, username } = await accessTokenPayload(req, res, jwt, db);
 		//Get the latest quote from each user you are following
 		const users = await trx('favoriting').select('to_user').where('from_user', username);
 		const allUsers = users.map((user) => user.to_user);
@@ -39,31 +35,24 @@ const fetchHome = async (req, res, db, jwt, refreshToken) => {
 		await trx.commit();
 	} catch (error) {
 		await trx.rollback();
-		console.log('400 ' + error);
-		res.status(400).json('unable to fetech quotes: ' + error);
+		res.sendStatus(400);
 	}
 };
 
-const createQuote = async (req, res, db, jwt, refreshToken) => {
+const createQuote = async (req, res, db, jwt, accessTokenPayload) => {
 	const { title, quote } = req.body;
-	console.log(title, quote);
 	const trx = await db.transaction();
 	try {
 		//get user from access token
-		const { username } = await refreshToken(req, res, jwt, db);
-		console.log(username);
-
+		const { username } = await accessTokenPayload(req, res, jwt, db);
 		const quoteId = await trx('quotes').insert({
 			user_name: username,
 			title: title,
 			quote: quote,
 			date_posted: new Date().toISOString().replace('T', ' ').substr(0, 19)
 		});
-		console.log(quoteId[0]);
 		const extractedQuote = await trx('quotes').select('*').where('id', quoteId[0]);
-		console.log(extractedQuote);
 		const finalQuote = { ...extractedQuote[0], likeCount: 0, didLike: false };
-		console.log(finalQuote);
 		res.json(finalQuote);
 		await trx.commit();
 	} catch {

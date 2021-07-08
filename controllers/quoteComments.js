@@ -9,27 +9,23 @@ const fetchComments = async (req, res, db) => {
 	}
 };
 
-const addComment = async (req, res, db, jwt, refreshToken) => {
+const addComment = async (req, res, db, jwt, accessTokenPayload) => {
 	const { quoteId, comment } = req.body;
-	console.log(quoteId, comment);
 	const trx = await db.transaction();
 	const date = new Date().toISOString().replace('T', ' ').substr(0, 19);
-	console.log('date', date);
 	try {
-		const { username } = await refreshToken(req, res, jwt, db);
+		const { username } = await accessTokenPayload(req, res, jwt, db);
 		const commentId = await trx('comments').insert({
 			quotes_id: quoteId,
 			comment: comment,
 			commenter: username,
 			date_posted: date
 		});
-		console.log('Comment inserted');
 		await trx('quote_notifications').insert({
 			notice: `${username} commented on your quote.`,
 			quotes_id: quoteId,
 			date: date
 		});
-		console.log('Noti inserted');
 		res.json({ id: commentId[0], quotes_id: quoteId, comment: comment, commenter: username, date_posted: date });
 		await trx.commit();
 	} catch {

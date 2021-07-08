@@ -15,9 +15,9 @@ const compare = (username, password, data, crypto, NONCE_SALT, SITE_KEY) => {
 	return subpass === stopass;
 };
 
-const logout = async (req, res, jwt, db) => {
+const logout = async (req, res, db, jwt, accessTokenPayload) => {
 	try {
-		const { username } = await refreshToken(req, res, jwt, db);
+		const { username } = await accessTokenPayload(req, res, jwt, db);
 		await db('users').update('refresh_token', '').where('user_name', username);
 		res.clearCookie('upUserId');
 		res.sendStatus(204);
@@ -26,27 +26,21 @@ const logout = async (req, res, jwt, db) => {
 	}
 };
 
-const refreshToken = async (req, res, jwt, db) => {
+const accessTokenPayload = async (req, res, jwt, db) => {
 	let accessToken = req.cookies.upUserId;
-	//console.log(accessToken);
 	if (!accessToken) {
 		throw new Error(403);
 	}
-
 	//verify the acess token
 	try {
 		jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
 		const base64Payload = accessToken.split('.')[1];
-		//console.log('ACCESS TOKEN VERIFIED base64Payload: ' + base64Payload);
 		const payload = JSON.parse(Buffer.from(base64Payload, 'base64').toString('utf-8'));
 		return payload;
 	} catch {}
 
 	const base64Payload = accessToken.split('.')[1];
-
 	const payload = JSON.parse(Buffer.from(base64Payload, 'base64').toString('utf-8'));
-
-	//console.log('payload: ' + payload);
 	//retrieve the refresh token from database
 	let refreshToken;
 	try {
@@ -58,8 +52,6 @@ const refreshToken = async (req, res, jwt, db) => {
 	if (!refreshToken.length) {
 		throw new Error(403);
 	}
-	//console.log('refreshToken', refreshToken[0].refresh_token);
-
 	//verify the refresh token
 	try {
 		jwt.verify(refreshToken[0].refresh_token, process.env.REFRESH_TOKEN_SECRET);
@@ -71,39 +63,28 @@ const refreshToken = async (req, res, jwt, db) => {
 		algorithm: 'HS256',
 		expiresIn: process.env.ACCESS_TOKEN_LIFE
 	});
-	//console.log('newToken ' + newToken);
-	//res.setHeader('Set-Cookie', cookie.serialize('upUserId', newToken, { httpOnly: true }));
 	res.cookie('upUserId', newToken, { httpOnly: true });
 	const base64Payload2 = newToken.split('.')[1];
 	const newTokenPayload = JSON.parse(Buffer.from(base64Payload2, 'base64').toString('utf-8'));
-	//console.log('newTokenPayload: ' + newTokenPayload);
 	return newTokenPayload;
 };
 
 const handleSignin = async (req, res, db, crypto, NONCE_SALT, SITE_KEY, jwt) => {
 	const { username, password } = req.body;
-	if (!username || !password) {
-		return res.status(400).json('incorrect form submission');
-	}
-
 	const trx = await db.transaction();
 	try {
 		const data = await trx('login').select('user_name', 'password', 'users_id', 'user_registered').where('user_name', username);
 		if (compare(username, password, data, crypto, NONCE_SALT, SITE_KEY)) {
 			const payload = { id: data[0].users_id, username: data[0].user_name };
-
 			const accessToken = jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, {
 				algorithm: 'HS256',
 				expiresIn: process.env.ACCESS_TOKEN_LIFE
 			});
-
 			const refreshToken = jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET, {
 				algorithm: 'HS256',
 				expiresIn: process.env.REFRESH_TOKEN_LIFE
 			});
-
 			await trx('users').update('refresh_token', refreshToken).where('user_name', username);
-
 			res.cookie('upUserId', accessToken, { httpOnly: true });
 			res.sendStatus(200);
 		} else {
@@ -116,4 +97,4 @@ const handleSignin = async (req, res, db, crypto, NONCE_SALT, SITE_KEY, jwt) => 
 	}
 };
 
-module.exports = { handleSignin, refreshToken, logout };
+module.exports = { handleSignin, accessTokenPayload, logout };

@@ -1,10 +1,7 @@
-const saveBio = async (req, res, db, jwt, refreshToken) => {
+const saveBio = async (req, res, db, jwt, accessTokenPayload) => {
 	const { bio } = req.body;
-	if (!bio) {
-		return res.status(400).json('form incomplete');
-	}
 	try {
-		const { username } = await refreshToken(req, res, jwt, db);
+		const { username } = await accessTokenPayload(req, res, jwt, db);
 		await db('users')
 			.update({
 				bio: bio

@@ -1,10 +1,8 @@
-const fetchProfileQuotes = async (req, res, db, jwt, refreshToken) => {
+const fetchProfileQuotes = async (req, res, db, jwt, accessTokenPayload) => {
 	const { username } = req.body;
-
 	const trx = await db.transaction();
 	try {
-		const { id } = await refreshToken(req, res, jwt, db);
-
+		const { id } = await accessTokenPayload(req, res, jwt, db);
 		//Get the latest quote from each user you are following
 		const userQuoteIds = await trx('quotes').select('id').where('user_name', username);
 		const extractedUserQuoteIds = userQuoteIds.map((userQuoteId) => userQuoteId['id']);
@@ -31,45 +29,36 @@ const fetchProfileQuotes = async (req, res, db, jwt, refreshToken) => {
 		const finalQuotes = quotesWithLikeCount.map((quoteWithLikeCount) => {
 			return { ...quoteWithLikeCount, didLike: quoteIdSet.has(quoteWithLikeCount['id']) ? true : false };
 		});
-		//console.log(finalQuotes);
 		res.json(finalQuotes);
 		await trx.commit();
 	} catch (error) {
 		await trx.rollback();
-		res.status(400).json('unable to fetech quotes: ' + error);
+		res.sendStatus(400);
 	}
 };
 
-const getUserInfo = async (req, res, db, jwt, refreshToken) => {
+const getUserInfo = async (req, res, db, jwt, accessTokenPayload) => {
 	const { username } = req.body;
 	const profileUser = username;
 	const trx = await db.transaction();
-	console.log('profileUser', profileUser);
 	try {
-		const { username } = await refreshToken(req, res, jwt, db);
-		console.log('currentUser', username);
-		//favoriters, favoriting cound
+		const { username } = await accessTokenPayload(req, res, jwt, db);
+		//favoriters, favoriting counts
 		const favoriters = await trx('favoriting').count('to_user as favoriters').where('to_user', profileUser);
 		const favoriting = await trx('favoriting').count('from_user as favoriting').where('from_user', profileUser);
 		const favoritingCounts = {
 			favoriters: favoriters.length ? favoriters[0]['favoriters'] : 0,
 			favoriting: favoriting.length ? favoriting[0]['favoriting'] : 0
 		};
-		console.log('favoritingCounts', favoritingCounts);
 		//Add didFavortie to each user
 		const userFavoriting = await trx('favoriting')
 			.select('to_user')
 			.where((builder) => builder.where('from_user', username).where('to_user', profileUser));
-		console.log('userFavoriting', userFavoriting);
 		const didFavorite = userFavoriting.length ? true : false;
-
 		//bio
 		const bio = await trx('users').select('bio').where('user_name', profileUser);
-		console.log(bio);
-
+		//userInfo
 		const userInfo = { currentUser: username, didFavorite: didFavorite, favoriters: favoritingCounts.favoriters, favoriting: favoritingCounts.favoriting, bio: bio[0].bio };
-
-		console.log('userInfo', userInfo);
 		res.json(userInfo);
 		await trx.commit();
 	} catch {
@@ -78,14 +67,12 @@ const getUserInfo = async (req, res, db, jwt, refreshToken) => {
 	}
 };
 
-const getCurrentUserInfo = async (req, res, db, jwt, refreshToken) => {
+const getCurrentUserInfo = async (req, res, db, jwt, accessTokenPayload) => {
 	try {
-		const { username } = await refreshToken(req, res, jwt, db);
+		const { username } = await accessTokenPayload(req, res, jwt, db);
 		//bio
 		const bio = await db('users').select('bio').where('user_name', username);
-		console.log(bio);
 		const userInfo = { currentUser: username, bio: bio[0].bio };
-		console.log(userInfo);
 		res.json(userInfo);
 	} catch {
 		res.sendStatus(400);

@@ -1,11 +1,7 @@
-const uploadPhoto = async (req, res, db, jwt, refreshToken) => {
+const uploadPhoto = async (req, res, db, jwt, accessTokenPayload) => {
 	const { name, image } = req.body;
-	if (!name || !image) {
-		return res.status(400).json('form incomplete');
-	}
-	console.log('photo name: ', name);
 	try {
-		const { username } = await refreshToken(req, res, jwt, db);
+		const { username } = await accessTokenPayload(req, res, jwt, db);
 		await db('users')
 			.update({
 				photo_name: name,
@@ -20,19 +16,16 @@ const uploadPhoto = async (req, res, db, jwt, refreshToken) => {
 
 const fetchPhoto = async (req, res, db) => {
 	const { username } = req.body;
-	console.log(username);
 	try {
 		const img = await db('users').select('photo').where('user_name', username);
-
 		const buffer = img[0]['photo'];
-		//console.log(buffer);
 		if (img) {
 			res.json({ photo: buffer.toString() });
 		} else {
-			res.status(400).json('No such image');
+			res.sendStatus(400);
 		}
-	} catch (error) {
-		res.status(400).json(error);
+	} catch {
+		res.sendStatus(400);
 	}
 };
 

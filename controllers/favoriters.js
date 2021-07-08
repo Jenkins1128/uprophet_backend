@@ -1,12 +1,11 @@
-const fetchFavoriters = async (req, res, db, jwt, refreshToken) => {
+const fetchFavoriters = async (req, res, db, jwt, accessTokenPayload) => {
 	const { username } = req.body;
 	const toUser = username;
 	const trx = await db.transaction();
 	try {
-		const { username } = await refreshToken(req, res, jwt, db);
+		const { username } = await accessTokenPayload(req, res, jwt, db);
 		const allFavoriters = await trx('favoriting').select('from_user').where('to_user', toUser);
 		const resultUsers = allFavoriters.map((result) => result.from_user);
-		console.log(resultUsers);
 		//Add didFavortie to each user
 		let finalUsers = [];
 		if (resultUsers.length) {
@@ -22,7 +21,6 @@ const fetchFavoriters = async (req, res, db, jwt, refreshToken) => {
 			});
 			finalUsers = finalResultUsers;
 		}
-		console.log(finalUsers);
 		res.json(finalUsers);
 		await trx.commit();
 	} catch {

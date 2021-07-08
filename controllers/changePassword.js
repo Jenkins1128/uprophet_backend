@@ -30,7 +30,7 @@ const hashPass = (username, password, userreg, crypto, NONCE_SALT, SITE_KEY) => 
 const changePassword = async (req, res, db, crypto, NONCE_SALT, SITE_KEY) => {
 	const { username, password } = req.body;
 	if (!username.length || !password.length) {
-		return res.status(400).json('incorrect form submission');
+		return res.sendStatus(400);
 	}
 	const userreg = new Date().getTime();
 	const hash = hashPass(username, password, userreg, crypto, NONCE_SALT, SITE_KEY);
@@ -44,14 +44,14 @@ const changePassword = async (req, res, db, crypto, NONCE_SALT, SITE_KEY) => {
 			.where('user_name', username);
 		res.sendStatus(200);
 	} catch (err) {
-		res.status(400).json('unable to change password: ' + err);
+		res.sendStatus(400);
 	}
 };
 
 const changePasswordSignin = async (req, res, db, crypto, NONCE_SALT, SITE_KEY) => {
 	const { username, password } = req.body;
 	if (!username || !password) {
-		return res.status(400).json('incorrect form submission');
+		return res.sendStatus(400);
 	}
 
 	const trx = await db.transaction();

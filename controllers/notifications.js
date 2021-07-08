@@ -1,7 +1,7 @@
-const fetchNotifications = async (req, res, db, jwt, refreshToken) => {
+const fetchNotifications = async (req, res, db, jwt, accessTokenPayload) => {
 	const trx = await db.transaction();
 	try {
-		const { username } = await refreshToken(req, res, jwt, db);
+		const { username } = await accessTokenPayload(req, res, jwt, db);
 		const quoteNotifications = await trx('quote_notifications')
 			.select('quote_notifications.id', 'quote_notifications.notice', 'quote_notifications.quotes_id', 'quote_notifications.date', 'quotes.user_name')
 			.join('quotes', 'quotes.id', 'quote_notifications.quotes_id')
@@ -16,7 +16,6 @@ const fetchNotifications = async (req, res, db, jwt, refreshToken) => {
 			allNotifications.push(obj);
 		});
 		allNotifications.sort((a, b) => b.date - a.date);
-		console.log('allNotifications', allNotifications);
 		res.json(allNotifications);
 		await trx.commit();
 	} catch (error) {

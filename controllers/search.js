@@ -1,12 +1,10 @@
-const getSearchResults = async (req, res, db, jwt, refreshToken) => {
+const getSearchResults = async (req, res, db, jwt, accessTokenPayload) => {
 	const { search } = req.body;
-
 	const trx = await db.transaction();
 	try {
-		const { username } = await refreshToken(req, res, jwt, db);
+		const { username } = await accessTokenPayload(req, res, jwt, db);
 		const results = await trx('users').select('id', 'user_name').where('user_name', 'like', `%${search}%`).limit(15);
 		const resultUsers = results.map((result) => result.user_name);
-
 		//Add didFavortie to each user
 		const usersFavoriting = await trx('favoriting')
 			.select('to_user')

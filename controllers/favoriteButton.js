@@ -1,10 +1,8 @@
-const favoriteUser = async (req, res, db, jwt, refreshToken) => {
+const favoriteUser = async (req, res, db, jwt, accessTokenPayload) => {
 	const { toUser } = req.body;
-
 	const trx = await db.transaction();
 	try {
-		const { username } = await refreshToken(req, res, jwt, db);
-
+		const { username } = await accessTokenPayload(req, res, jwt, db);
 		await trx('favoriting').insert({
 			from_user: username,
 			to_user: toUser
@@ -18,15 +16,14 @@ const favoriteUser = async (req, res, db, jwt, refreshToken) => {
 		await trx.commit();
 	} catch (error) {
 		await trx.rollback();
-		res.status(400).json(error.toString());
+		res.sendStatus(400);
 	}
 };
 
-const unfavoriteUser = async (req, res, db, jwt, refreshToken) => {
+const unfavoriteUser = async (req, res, db, jwt, accessTokenPayload) => {
 	const { toUser } = req.body;
-
 	try {
-		const { username } = await refreshToken(req, res, jwt, db);
+		const { username } = await accessTokenPayload(req, res, jwt, db);
 		await db('favoriting')
 			.where({
 				from_user: username,
