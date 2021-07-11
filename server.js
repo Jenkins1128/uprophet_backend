@@ -34,9 +34,9 @@ const db = require('knex')({
 	client: 'mysql2',
 	connection: {
 		host: process.env.HOST,
-		user: process.env.NODE_ENV.trim() === 'development' ? process.env.USER_DEV : process.env.USER_PROD,
-		password: process.env.NODE_ENV.trim() === 'development' ? process.env.PASSWORD_DEV : process.env.PASSWORD_PROD,
-		database: process.env.NODE_ENV.trim() === 'development' ? process.env.DATABASE_DEV : process.env.DATABASE_PROD
+		user: process.env.USER_PROD,
+		password: process.env.PASSWORD_PROD,
+		database: process.env.DATABASE_PROD
 	}
 });
 //MIDDLEWARE
