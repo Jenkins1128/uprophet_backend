@@ -29,14 +29,15 @@ const { getSearchResults } = require('./controllers/search');
 const SITE_KEY = 'tIVLEabZMrxm!%4ZHJWnXAjxbPt4mYGtyb!@$%&^%VQJsxGjOIdej#OT3EhCpxqC5Bu6KSOJM$$##VJV9jLF5uWiiFXm1G';
 const NONCE_SALT = 'fxmAMC5TiY2_)(eh2DfbOOX4*&F73ldggm8KZP35N48t3OVbTaoOpaOlLydef#_+kvusgNgafnuujTPdazfzqpDy';
 
+const isProd = true;
 //DB
 const db = require('knex')({
 	client: 'mysql2',
 	connection: {
 		host: process.env.HOST,
-		user: process.env.USER_PROD,
-		password: process.env.PASSWORD_PROD,
-		database: process.env.DATABASE_PROD
+		user: isProd ? process.env.USER_PROD : process.env.USER_DEV,
+		password: isProd ? process.env.PASSWORD_PROD : process.env.PASSWORD_DEV,
+		database: isProd ? process.env.DATABASE_PROD : process.env.DATABASE_DEV
 	}
 });
 //MIDDLEWARE
@@ -76,7 +77,7 @@ app.get('/api/', (req, res) => {
 	fetchHome(req, res, db, jwt, accessTokenPayload);
 });
 app.get('/api/test', (req, res) => {
-	res.json({test: 'its working!'});
+	res.json({ test: 'its working!' });
 });
 app.get('/api/explore', (req, res) => fetchExplore(req, res, db, jwt, accessTokenPayload));
 app.get('/api/notifications', (req, res) => fetchNotifications(req, res, db, jwt, accessTokenPayload));

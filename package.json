@@ -4,8 +4,7 @@
 	"description": "",
 	"main": "script.js",
 	"scripts": {
-		"start": "nodemon server.js",
-		"test": "nodemon server.js"
+		"start": "nodemon server.js"
 	},
 	"author": "Isaiah Jenkins",
 	"license": "ISC",
