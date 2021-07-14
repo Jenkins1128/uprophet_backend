@@ -45,48 +45,51 @@ app.use(express.json({ limit: '50mb' }));
 app.use(fileUpload());
 app.use(cookieParser());
 //POSTS
-app.post('/favoriters', (req, res) => {
+app.post('/api/favoriters', (req, res) => {
 	fetchFavoriters(req, res, db, jwt, accessTokenPayload);
 });
-app.post('/favoriting', (req, res) => {
+app.post('/api/favoriting', (req, res) => {
 	fetchFavoriting(req, res, db, jwt, accessTokenPayload);
 });
-app.post('/createQuote', (req, res) => createQuote(req, res, db, jwt, accessTokenPayload));
-app.post('/signup', (req, res) => handleSignup(req, res, db, crypto, NONCE_SALT, SITE_KEY));
-app.post('/like', (req, res) => likeQuote(req, res, db, jwt, accessTokenPayload));
-app.post('/unlike', (req, res) => unlikeQuote(req, res, db, jwt, accessTokenPayload));
-app.post('/addComment', (req, res) => addComment(req, res, db, jwt, accessTokenPayload));
-app.post('/favorite', (req, res) => favoriteUser(req, res, db, jwt, accessTokenPayload));
-app.post('/unfavorite', (req, res) => unfavoriteUser(req, res, db, jwt, accessTokenPayload));
-app.post('/getPhoto', (req, res) => fetchPhoto(req, res, db));
-app.post('/getComments', (req, res) => fetchComments(req, res, db));
-app.post('/getQuotePost', (req, res) => getQuotePost(req, res, db, jwt, accessTokenPayload));
-app.post('/search', (req, res) => getSearchResults(req, res, db, jwt, accessTokenPayload));
-app.post('/profile', (req, res) => {
+app.post('/api/createQuote', (req, res) => createQuote(req, res, db, jwt, accessTokenPayload));
+app.post('/api/signup', (req, res) => handleSignup(req, res, db, crypto, NONCE_SALT, SITE_KEY));
+app.post('/api/like', (req, res) => likeQuote(req, res, db, jwt, accessTokenPayload));
+app.post('/api/unlike', (req, res) => unlikeQuote(req, res, db, jwt, accessTokenPayload));
+app.post('/api/addComment', (req, res) => addComment(req, res, db, jwt, accessTokenPayload));
+app.post('/api/favorite', (req, res) => favoriteUser(req, res, db, jwt, accessTokenPayload));
+app.post('/api/unfavorite', (req, res) => unfavoriteUser(req, res, db, jwt, accessTokenPayload));
+app.post('/api/getPhoto', (req, res) => fetchPhoto(req, res, db));
+app.post('/api/getComments', (req, res) => fetchComments(req, res, db));
+app.post('/api/getQuotePost', (req, res) => getQuotePost(req, res, db, jwt, accessTokenPayload));
+app.post('/api/search', (req, res) => getSearchResults(req, res, db, jwt, accessTokenPayload));
+app.post('/api/profile', (req, res) => {
 	fetchProfileQuotes(req, res, db, jwt, accessTokenPayload);
 });
-app.post('/userInfo', (req, res) => {
+app.post('/api/userInfo', (req, res) => {
 	getUserInfo(req, res, db, jwt, accessTokenPayload);
 });
-app.post('/changePasswordSignIn', (req, res) => changePasswordSignin(req, res, db, crypto, NONCE_SALT, SITE_KEY));
-app.post('/changePassword', (req, res) => changePassword(req, res, db, crypto, NONCE_SALT, SITE_KEY));
-app.post('/forgotPassword', (req, res) => forgotPassword(req, res, db, crypto, NONCE_SALT, SITE_KEY, nodemailer));
+app.post('/api/changePasswordSignIn', (req, res) => changePasswordSignin(req, res, db, crypto, NONCE_SALT, SITE_KEY));
+app.post('/api/changePassword', (req, res) => changePassword(req, res, db, crypto, NONCE_SALT, SITE_KEY));
+app.post('/api/forgotPassword', (req, res) => forgotPassword(req, res, db, crypto, NONCE_SALT, SITE_KEY, nodemailer));
 //GETS
-app.get('/', (req, res) => {
+app.get('/api/', (req, res) => {
 	fetchHome(req, res, db, jwt, accessTokenPayload);
 });
-app.get('/explore', (req, res) => fetchExplore(req, res, db, jwt, accessTokenPayload));
-app.get('/notifications', (req, res) => fetchNotifications(req, res, db, jwt, accessTokenPayload));
-app.get('/getNotificationCount', (req, res) => getNotificationCount(req, res, db, jwt, accessTokenPayload));
-app.get('/currentUser', (req, res) => getUser(req, res, db, jwt, accessTokenPayload));
-app.get('/currentUserInfo', (req, res) => getCurrentUserInfo(req, res, db, jwt, accessTokenPayload));
-app.get('/logout', (req, res) => logout(req, res, db, jwt, accessTokenPayload));
+app.get('/api/test', (req, res) => {
+	res.json({test: 'its working!'});
+});
+app.get('/api/explore', (req, res) => fetchExplore(req, res, db, jwt, accessTokenPayload));
+app.get('/api/notifications', (req, res) => fetchNotifications(req, res, db, jwt, accessTokenPayload));
+app.get('/api/getNotificationCount', (req, res) => getNotificationCount(req, res, db, jwt, accessTokenPayload));
+app.get('/api/currentUser', (req, res) => getUser(req, res, db, jwt, accessTokenPayload));
+app.get('/api/currentUserInfo', (req, res) => getCurrentUserInfo(req, res, db, jwt, accessTokenPayload));
+app.get('/api/logout', (req, res) => logout(req, res, db, jwt, accessTokenPayload));
 //PUTS
-app.put('/signin', (req, res) => handleSignin(req, res, db, crypto, NONCE_SALT, SITE_KEY, jwt));
-app.put('/savebio', (req, res) => saveBio(req, res, db, jwt, accessTokenPayload));
-app.put('/uploadPic', (req, res) => uploadPhoto(req, res, db, jwt, accessTokenPayload));
+app.put('/api/signin', (req, res) => handleSignin(req, res, db, crypto, NONCE_SALT, SITE_KEY, jwt));
+app.put('/api/savebio', (req, res) => saveBio(req, res, db, jwt, accessTokenPayload));
+app.put('/api/uploadPic', (req, res) => uploadPhoto(req, res, db, jwt, accessTokenPayload));
 //DELETES
-app.delete('/deleteQuote', (req, res) => deleteQuotePost(req, res, db));
+app.delete('/api/deleteQuote', (req, res) => deleteQuotePost(req, res, db));
 
 app.listen(process.env.PORT, () => {
 	console.log(`app is running on port 3001`);
