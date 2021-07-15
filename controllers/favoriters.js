@@ -17,7 +17,7 @@ const fetchFavoriters = async (req, res, db, jwt, accessTokenPayload) => {
 				usersSet.add(user['to_user']);
 			});
 			const finalResultUsers = allFavoriters.map((user) => {
-				return { ...user, currentUser: username, didFavorite: usersSet.has(user['to_user']) ? true : false };
+				return { ...user, currentUser: username, didFavorite: usersSet.has(user['from_user']) ? true : false };
 			});
 			finalUsers = finalResultUsers;
 		}
