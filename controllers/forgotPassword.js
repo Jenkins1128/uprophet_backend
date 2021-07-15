@@ -1,10 +1,14 @@
-const sendMail = async (username, userEmail, tempPassword, nodemailer) => {
+const sendMail = async (username, userEmail, tempPassword, nodemailer, myAccessToken) => {
 	// create reusable transporter object using the default SMTP transport
 	let transporter = nodemailer.createTransport({
 		service: 'gmail',
 		auth: {
-			user: 'uprophetworld@gmail.com',
-			pass: process.env.GMAIL_PASS
+			type: 'OAuth2',
+			user: 'uprophetworld@gmail.com', //your gmail account you used to set the project up in google cloud console"
+			clientId: process.env.OAUTH2_CLIENT_ID,
+			clientSecret: process.env.OAUTH2_CLIENT_SECRET,
+			refreshToken: process.env.OAUTH2_REFRESHTOKEN,
+			accessToken: myAccessToken //access token variable we defined earlier
 		}
 	});
 	// send mail with defined transport object

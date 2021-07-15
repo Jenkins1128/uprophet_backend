@@ -6,6 +6,8 @@ const cors = require('cors');
 const crypto = require('crypto');
 const cookieParser = require('cookie-parser');
 const nodemailer = require('nodemailer');
+const { google } = require('googleapis');
+const OAuth2 = google.auth.OAuth2;
 const fileUpload = require('express-fileupload');
 const { getUser } = require('./controllers/user');
 const { handleSignin, accessTokenPayload, logout } = require('./controllers/signin');
@@ -45,6 +47,12 @@ app.use(cors({ credentials: true, origin: true }));
 app.use(express.json({ limit: '50mb' }));
 app.use(fileUpload());
 app.use(cookieParser());
+//OAUTH2 CLIENT
+const myOAuth2Client = new OAuth2(process.env.OAUTH2_CLIENT_ID, process.env.OAUTH2_CLIENT_SECRET, 'https://developers.google.com/oauthplayground');
+myOAuth2Client.setCredentials({
+	refresh_token: process.env.OAUTH2_REFRESHTOKEN
+});
+const myAccessToken = myOAuth2Client.getAccessToken();
 //POSTS
 app.post('/api/favoriters', (req, res) => {
 	fetchFavoriters(req, res, db, jwt, accessTokenPayload);
@@ -71,7 +79,7 @@ app.post('/api/userInfo', (req, res) => {
 });
 app.post('/api/changePasswordSignIn', (req, res) => changePasswordSignin(req, res, db, crypto, NONCE_SALT, SITE_KEY));
 app.post('/api/changePassword', (req, res) => changePassword(req, res, db, crypto, NONCE_SALT, SITE_KEY));
-app.post('/api/forgotPassword', (req, res) => forgotPassword(req, res, db, crypto, NONCE_SALT, SITE_KEY, nodemailer));
+app.post('/api/forgotPassword', (req, res) => forgotPassword(req, res, db, crypto, NONCE_SALT, SITE_KEY, nodemailer, myAccessToken));
 //GETS
 app.get('/api/', (req, res) => {
 	fetchHome(req, res, db, jwt, accessTokenPayload);
