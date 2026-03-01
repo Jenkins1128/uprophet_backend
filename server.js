@@ -52,7 +52,7 @@ app.use(cookieParser());
 // myOAuth2Client.setCredentials({
 // 	refresh_token: process.env.OAUTH2_REFRESHTOKEN
 // });
-const myAccessToken = myOAuth2Client.getAccessToken();
+//const myAccessToken = myOAuth2Client.getAccessToken();
 //POSTS
 app.post('/api/favoriters', (req, res) => {
 	fetchFavoriters(req, res, db, jwt, accessTokenPayload);
