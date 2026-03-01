@@ -35,11 +35,11 @@ const isProd = true;
 //DB
 const db = require('knex')({
 	client: 'mysql2',
-	connection: {
+	connection:	isProd ? process.env.MYSQL_URL :{
 		host: process.env.HOST,
-		user: isProd ? process.env.USER_PROD : process.env.USER_DEV,
-		password: isProd ? process.env.PASSWORD_PROD : process.env.PASSWORD_DEV,
-		database: isProd ? process.env.DATABASE_PROD : process.env.DATABASE_DEV
+		user: process.env.USER_DEV,
+		password: process.env.PASSWORD_DEV,
+		database: process.env.DATABASE_DEV
 	}
 });
 //MIDDLEWARE
@@ -100,6 +100,8 @@ app.put('/api/uploadPic', (req, res) => uploadPhoto(req, res, db, jwt, accessTok
 //DELETES
 app.delete('/api/deleteQuote', (req, res) => deleteQuotePost(req, res, db));
 
-app.listen(process.env.PORT, () => {
+const PORT = process.env.PORT || 3001;
+
+app.listen(PORT, () => {
 	console.log(`app is running on port 3001`);
 });
