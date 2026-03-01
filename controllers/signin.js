@@ -61,9 +61,14 @@ const accessTokenPayload = async (req, res, jwt, db) => {
 
 	let newToken = jwt.sign({ id: payload.id, username: payload.username }, process.env.ACCESS_TOKEN_SECRET, {
 		algorithm: 'HS256',
-		expiresIn: process.env.ACCESS_TOKEN_LIFE
+		expiresIn: process.env.ACCESS_TOKEN_LIFE,
 	});
-	res.cookie('upUserId', newToken, { httpOnly: true });
+	res.cookie('upUserId', newToken, {
+		httpOnly: true,
+		secure: true, // Must be true for HTTPS
+		sameSite: 'none', // Must be 'none' for cross-domain (uprophet.com -> api.uprophet.com)
+		maxAge: 1000 * 60 * 60 * 24, // 24 hours
+	});
 	const base64Payload2 = newToken.split('.')[1];
 	const newTokenPayload = JSON.parse(Buffer.from(base64Payload2, 'base64').toString('utf-8'));
 	return newTokenPayload;
@@ -78,14 +83,19 @@ const handleSignin = async (req, res, db, crypto, NONCE_SALT, SITE_KEY, jwt) => 
 			const payload = { id: data[0].users_id, username: data[0].user_name };
 			const accessToken = jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, {
 				algorithm: 'HS256',
-				expiresIn: process.env.ACCESS_TOKEN_LIFE
+				expiresIn: process.env.ACCESS_TOKEN_LIFE,
 			});
 			const refreshToken = jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET, {
 				algorithm: 'HS256',
-				expiresIn: process.env.REFRESH_TOKEN_LIFE
+				expiresIn: process.env.REFRESH_TOKEN_LIFE,
 			});
 			await trx('users').update('refresh_token', refreshToken).where('user_name', username);
-			res.cookie('upUserId', accessToken, { httpOnly: true });
+			res.cookie('upUserId', accessToken, {
+				httpOnly: true,
+				secure: true, // Must be true for HTTPS
+				sameSite: 'none', // Must be 'none' for cross-domain (uprophet.com -> api.uprophet.com)
+				maxAge: 1000 * 60 * 60 * 24, // 24 hours
+			});
 			res.sendStatus(200);
 		} else {
 			res.sendStatus(401);
