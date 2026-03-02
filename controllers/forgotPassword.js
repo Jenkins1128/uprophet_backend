@@ -58,7 +58,7 @@ const changePassword = async (res, username, db, crypto, NONCE_SALT, SITE_KEY) =
 	}
 };
 
-const forgotPassword = async (req, res, db, crypto, NONCE_SALT, SITE_KEY, nodemailer, myAccessToken) => {
+const forgotPassword = async (req, res, db, crypto, NONCE_SALT, SITE_KEY, nodemailer, myOAuth2Client) => {
 	const { username, email } = req.body;
 	try {
 		const userEmail = await db('users').select('email').where('user_name', username);
@@ -66,9 +66,11 @@ const forgotPassword = async (req, res, db, crypto, NONCE_SALT, SITE_KEY, nodema
 			throw new Exception();
 		}
 		console.log("forogt userEmail found", userEmail);
+		const { token } = await myOAuth2Client.getAccessToken();
+        console.log("Token successfully fetched for email task");
 		const tempPass = await changePassword(res, username, db, crypto, NONCE_SALT, SITE_KEY);
 		console.log("tempPass created!", userEmail);
-		await sendMail(username, userEmail[0].email, tempPass, nodemailer, myAccessToken);
+		await sendMail(username, userEmail[0].email, tempPass, nodemailer, token);
 		console.log("email sent!");
 		res.sendStatus(200);
 	} catch (error) {

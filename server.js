@@ -56,13 +56,6 @@ const myOAuth2Client = new OAuth2(process.env.OAUTH2_CLIENT_ID, process.env.OAUT
 myOAuth2Client.setCredentials({
 	refresh_token: process.env.OAUTH2_REFRESHTOKEN
 });
-let myAccessToken;
-myOAuth2Client.getAccessToken()
-    .then(token => {
-        myAccessToken = token.token;
-        console.log("OAuth2 Access Token refreshed successfully");
-    })
-    .catch(err => console.error("OAuth2 Error:", err));
 //POSTS
 app.post('/api/favoriters', (req, res) => {
 	fetchFavoriters(req, res, db, jwt, accessTokenPayload);
@@ -89,7 +82,7 @@ app.post('/api/userInfo', (req, res) => {
 });
 app.post('/api/changePasswordSignIn', (req, res) => changePasswordSignin(req, res, db, crypto, NONCE_SALT, SITE_KEY));
 app.post('/api/changePassword', (req, res) => changePassword(req, res, db, crypto, NONCE_SALT, SITE_KEY));
-app.post('/api/forgotPassword', (req, res) => forgotPassword(req, res, db, crypto, NONCE_SALT, SITE_KEY, nodemailer, myAccessToken));
+app.post('/api/forgotPassword', (req, res) => forgotPassword(req, res, db, crypto, NONCE_SALT, SITE_KEY, nodemailer, myOAuth2Client));
 //GETS
 app.get('/api/', (req, res) => {
 	fetchHome(req, res, db, jwt, accessTokenPayload);
