@@ -56,7 +56,13 @@ const myOAuth2Client = new OAuth2(process.env.OAUTH2_CLIENT_ID, process.env.OAUT
 myOAuth2Client.setCredentials({
 	refresh_token: process.env.OAUTH2_REFRESHTOKEN
 });
-const myAccessToken = myOAuth2Client.getAccessToken();
+let myAccessToken;
+myOAuth2Client.getAccessToken()
+    .then(token => {
+        myAccessToken = token.token;
+        console.log("OAuth2 Access Token refreshed successfully");
+    })
+    .catch(err => console.error("OAuth2 Error:", err));
 //POSTS
 app.post('/api/favoriters', (req, res) => {
 	fetchFavoriters(req, res, db, jwt, accessTokenPayload);
