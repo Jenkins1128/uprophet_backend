@@ -1,35 +1,19 @@
-const sendMail = async (username, userEmail, tempPassword, nodemailer, myAccessToken) => {
-	console.log('Attempting to send mail. Token type:', typeof myAccessToken, myAccessToken ?? 'No token available');
-	// create reusable transporter object using the default SMTP transport
-	let transporter = nodemailer.createTransport({
-		host: 'smtp.gmail.com',
-		port: 587,
-		secure: false, // For port 587, this MUST be false
-		auth: {
-			type: 'OAuth2',
-			user: 'uprophetworld@gmail.com',
-			clientId: process.env.OAUTH2_CLIENT_ID,
-			clientSecret: process.env.OAUTH2_CLIENT_SECRET,
-			refreshToken: process.env.OAUTH2_REFRESHTOKEN,
-			accessToken: myAccessToken,
-		},
-		tls: {
-			// This is the "Magic Key" for cloud environments.
-			// It prevents the connection from hanging if the server
-			// name doesn't perfectly match the certificate.
-			rejectUnauthorized: false,
-		},
-		connectionTimeout: 10000, // 10 seconds is plenty if the port is open
-		debug: true, // This will show more details in Railway logs
-		logger: true,
-	});
-	// send mail with defined transport object
-	await transporter.sendMail({
-		from: '"Uprophet" <uprophetworld@gmail.com>', // sender address
-		to: userEmail, // list of receivers
-		subject: 'Uprophet Temporary Password', // Subject line
-		html: `Hello ${username},<br><br>Here is your temporary password: <strong>${tempPassword}</strong> <br><br> <a href="https://uprophet.com/changepassword">Change Password</a>`, // html body
-	});
+const { Resend } = require('resend');
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+const sendMail = async (username, userEmail, tempPassword) => {
+    try {
+        const data = await resend.emails.send({
+            from: 'Uprophet <recovery.uprophet.com>',
+            to: userEmail,
+            subject: 'Uprophet Temporary Password',
+            html: `Hello ${username},<br><br>Here is your temporary password: <strong>${tempPassword}</strong> <br><br> <a href="https://uprophet.com/changepassword">Change Password</a>`
+        });
+        console.log("SUCCESS: Email sent via Resend API", data);
+    } catch (error) {
+        console.error("Resend API Error:", error);
+        throw error;
+    }
 };
 
 const hashPass = (username, password, userreg, crypto, NONCE_SALT, SITE_KEY) => {
@@ -60,7 +44,7 @@ const changePassword = async (res, username, db, crypto, NONCE_SALT, SITE_KEY) =
 		await db('login')
 			.update({
 				password: hash,
-				user_registered: userreg,
+				user_registered: userreg
 			})
 			.where('user_name', username);
 		return randPass;
@@ -69,23 +53,20 @@ const changePassword = async (res, username, db, crypto, NONCE_SALT, SITE_KEY) =
 	}
 };
 
-const forgotPassword = async (req, res, db, crypto, NONCE_SALT, SITE_KEY, nodemailer, myOAuth2Client) => {
+const forgotPassword = async (req, res, db, crypto, NONCE_SALT, SITE_KEY) => {
 	const { username, email } = req.body;
 	try {
 		const userEmail = await db('users').select('email').where('user_name', username);
 		if (userEmail.length && userEmail[0].email !== email) {
 			throw new Exception();
 		}
-		console.log('forogt userEmail found', userEmail);
-		const { token } = await myOAuth2Client.getAccessToken();
-		console.log('Token successfully fetched for email task');
+		console.log("forogt userEmail found", userEmail);
 		const tempPass = await changePassword(res, username, db, crypto, NONCE_SALT, SITE_KEY);
-		console.log('tempPass created!', userEmail);
-		await sendMail(username, userEmail[0].email, tempPass, nodemailer, token);
-		console.log('email sent!');
+		console.log("tempPass created!", userEmail);
+		await sendMail(username, userEmail[0].email, tempPass);
 		res.sendStatus(200);
 	} catch (error) {
-		console.error('DETAILED AUTH ERROR:', error); // This is the gold mine for debugging
+		console.error("DETAILED AUTH ERROR:", error); // This is the gold mine for debugging
 		res.sendStatus(400);
 	}
 };
