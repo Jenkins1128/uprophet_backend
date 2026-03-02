@@ -1,5 +1,5 @@
 const sendMail = async (username, userEmail, tempPassword, nodemailer, myAccessToken) => {
-	console.log('Attempting to send mail. Token type:', typeof myAccessToken);
+	console.log('Attempting to send mail. Token type:', typeof myAccessToken, myAccessToken ?? 'No token available');
 	// create reusable transporter object using the default SMTP transport
 	let transporter = nodemailer.createTransport({
 		host: 'smtp.gmail.com',
@@ -13,9 +13,12 @@ const sendMail = async (username, userEmail, tempPassword, nodemailer, myAccessT
 			refreshToken: process.env.OAUTH2_REFRESHTOKEN,
 			accessToken: myAccessToken,
 		},
-		connectionTimeout: 20000, // Increased to 20 seconds
-		greetingTimeout: 20000,
-		socketTimeout: 20000,
+		// Adding these specifically to handle the "Timeout"
+		connectionTimeout: 30000, // 30 seconds
+		greetingTimeout: 30000,
+		socketTimeout: 30000,
+		debug: true, // This will show more details in Railway logs
+		logger: true,
 	});
 	// send mail with defined transport object
 	await transporter.sendMail({
