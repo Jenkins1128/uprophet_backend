@@ -1,4 +1,4 @@
-const sendMail = async (username, userEmail, tempPassword, nodemailer) => {
+const sendMail = async (username, userEmail, tempPassword, nodemailer, myAccessToken) => {
 	// create reusable transporter object using the default SMTP transport
 	let transporter = nodemailer.createTransport({
 		service: 'gmail',
@@ -8,6 +8,7 @@ const sendMail = async (username, userEmail, tempPassword, nodemailer) => {
 			clientId: process.env.OAUTH2_CLIENT_ID,
 			clientSecret: process.env.OAUTH2_CLIENT_SECRET,
 			refreshToken: process.env.OAUTH2_REFRESHTOKEN,
+			accessToken: myAccessToken
 		}
 	});
 	// send mail with defined transport object
@@ -64,7 +65,7 @@ const forgotPassword = async (req, res, db, crypto, NONCE_SALT, SITE_KEY, nodema
 			throw new Exception();
 		}
 		const tempPass = await changePassword(res, username, db, crypto, NONCE_SALT, SITE_KEY);
-		await sendMail(username, userEmail[0].email, tempPass, nodemailer), myAccessToken;
+		await sendMail(username, userEmail[0].email, tempPass, nodemailer, myAccessToken);
 		res.sendStatus(200);
 	} catch (error) {
 		res.sendStatus(400);
