@@ -71,7 +71,7 @@ const forgotPassword = async (req, res, db, crypto, NONCE_SALT, SITE_KEY, nodema
 		console.log("email sent!");
 		res.sendStatus(200);
 	} catch (error) {
-		res.sendStatus(400).json(error);
+		res.status(400).json(error);
 	}
 };
 
