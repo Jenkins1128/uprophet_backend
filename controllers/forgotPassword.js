@@ -1,4 +1,5 @@
 const sendMail = async (username, userEmail, tempPassword, nodemailer, myAccessToken) => {
+	console.log("Attempting to send mail. Token type:", typeof myAccessToken);
 	// create reusable transporter object using the default SMTP transport
 	let transporter = nodemailer.createTransport({
 		service: 'gmail',
@@ -71,7 +72,11 @@ const forgotPassword = async (req, res, db, crypto, NONCE_SALT, SITE_KEY, nodema
 		console.log("email sent!");
 		res.sendStatus(200);
 	} catch (error) {
-		res.status(400).json(error);
+		console.error("DETAILED AUTH ERROR:", error); // This is the gold mine for debugging
+		res.status(400).json({
+			message: "Email failed to send",
+			error: error.message // Sending this back to the frontend helps you see the cause in DevTools
+		});
 	}
 };
 
