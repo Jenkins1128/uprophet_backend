@@ -3,8 +3,8 @@ const sendMail = async (username, userEmail, tempPassword, nodemailer, myAccessT
 	// create reusable transporter object using the default SMTP transport
 	let transporter = nodemailer.createTransport({
 		host: 'smtp.gmail.com',
-		port: 465,
-		secure: true, // MUST be true for port 465
+		port: 587,
+		secure: false, // For port 587, this MUST be false
 		auth: {
 			type: 'OAuth2',
 			user: 'uprophetworld@gmail.com',
@@ -13,10 +13,13 @@ const sendMail = async (username, userEmail, tempPassword, nodemailer, myAccessT
 			refreshToken: process.env.OAUTH2_REFRESHTOKEN,
 			accessToken: myAccessToken,
 		},
-		// Adding these specifically to handle the "Timeout"
-		connectionTimeout: 30000, // 30 seconds
-		greetingTimeout: 30000,
-		socketTimeout: 30000,
+		tls: {
+			// This is the "Magic Key" for cloud environments.
+			// It prevents the connection from hanging if the server
+			// name doesn't perfectly match the certificate.
+			rejectUnauthorized: false,
+		},
+		connectionTimeout: 10000, // 10 seconds is plenty if the port is open
 		debug: true, // This will show more details in Railway logs
 		logger: true,
 	});
