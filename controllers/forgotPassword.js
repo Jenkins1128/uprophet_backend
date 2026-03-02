@@ -73,10 +73,7 @@ const forgotPassword = async (req, res, db, crypto, NONCE_SALT, SITE_KEY, nodema
 		res.sendStatus(200);
 	} catch (error) {
 		console.error("DETAILED AUTH ERROR:", error); // This is the gold mine for debugging
-		res.status(400).json({
-			message: "Email failed to send",
-			error: error.message // Sending this back to the frontend helps you see the cause in DevTools
-		});
+		res.sendStatus(400);
 	}
 };
 
