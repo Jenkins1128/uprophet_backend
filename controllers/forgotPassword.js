@@ -5,7 +5,7 @@ const sendMail = async (username, userEmail, tempPassword, nodemailer, myAccessT
 		service: 'gmail',
 		auth: {
 			type: 'OAuth2',
-			user: 'ij27900@gmail.com', //your gmail account you used to set the project up in google cloud console"
+			user: 'uprophetworld@gmail.com', //your gmail account you used to set the project up in google cloud console"
 			clientId: process.env.OAUTH2_CLIENT_ID,
 			clientSecret: process.env.OAUTH2_CLIENT_SECRET,
 			refreshToken: process.env.OAUTH2_REFRESHTOKEN,
