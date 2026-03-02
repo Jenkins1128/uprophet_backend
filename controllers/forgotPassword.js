@@ -57,7 +57,7 @@ const changePassword = async (res, username, db, crypto, NONCE_SALT, SITE_KEY) =
 	}
 };
 
-const forgotPassword = async (req, res, db, crypto, NONCE_SALT, SITE_KEY, nodemailer) => {
+const forgotPassword = async (req, res, db, crypto, NONCE_SALT, SITE_KEY, nodemailer, myAccessToken) => {
 	const { username, email } = req.body;
 	try {
 		const userEmail = await db('users').select('email').where('user_name', username);
@@ -65,7 +65,7 @@ const forgotPassword = async (req, res, db, crypto, NONCE_SALT, SITE_KEY, nodema
 			throw new Exception();
 		}
 		const tempPass = await changePassword(res, username, db, crypto, NONCE_SALT, SITE_KEY);
-		await sendMail(username, userEmail[0].email, tempPass, nodemailer);
+		await sendMail(username, userEmail[0].email, tempPass, nodemailer, myAccessToken);
 		res.sendStatus(200);
 	} catch (error) {
 		res.sendStatus(400);
