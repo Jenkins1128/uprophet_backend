@@ -64,11 +64,14 @@ const forgotPassword = async (req, res, db, crypto, NONCE_SALT, SITE_KEY, nodema
 		if (userEmail.length && userEmail[0].email !== email) {
 			throw new Exception();
 		}
+		console.log("forogt userEmail found", userEmail);
 		const tempPass = await changePassword(res, username, db, crypto, NONCE_SALT, SITE_KEY);
+		console.log("tempPass created!", userEmail);
 		await sendMail(username, userEmail[0].email, tempPass, nodemailer, myAccessToken);
+		console.log("email sent!");
 		res.sendStatus(200);
 	} catch (error) {
-		res.sendStatus(400);
+		res.sendStatus(400).json(error);
 	}
 };
 
