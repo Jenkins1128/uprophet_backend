@@ -4,7 +4,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 const sendMail = async (username, userEmail, tempPassword) => {
     try {
         const data = await resend.emails.send({
-            from: 'Uprophet <recovery.uprophet.com>',
+            from: 'Uprophet <noreply@recovery.uprophet.com>',
             to: userEmail,
             subject: 'Uprophet Temporary Password',
             html: `Hello ${username},<br><br>Here is your temporary password: <strong>${tempPassword}</strong> <br><br> <a href="https://uprophet.com/changepassword">Change Password</a>`
