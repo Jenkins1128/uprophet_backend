@@ -4,7 +4,9 @@
 	"description": "",
 	"main": "script.js",
 	"scripts": {
-		"start": "nodemon server.js"
+		"start": "nodemon server.js",
+		"typecheck": "tsc --noEmit",
+		"build": "tsc"
 	},
 	"author": "Isaiah Jenkins",
 	"license": "ISC",
@@ -24,6 +26,14 @@
 		"resend": "^6.9.3"
 	},
 	"devDependencies": {
-		"nodemon": "^2.0.7"
+		"@types/cookie-parser": "^1.4.10",
+		"@types/cors": "^2.8.19",
+		"@types/express": "^5.0.6",
+		"@types/express-fileupload": "^1.5.1",
+		"@types/jsonwebtoken": "^9.0.10",
+		"@types/node": "^25.6.0",
+		"nodemon": "^2.0.7",
+		"ts-node": "^10.9.2",
+		"typescript": "^6.0.3"
 	}
 }
