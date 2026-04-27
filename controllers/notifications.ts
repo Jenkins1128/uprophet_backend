@@ -1,29 +1,82 @@
 import { Request, Response } from 'express';
-import { Knex } from 'knex';
+import { eq, desc, and } from 'drizzle-orm';
 import { JwtModule, AccessTokenPayloadFn } from '../types';
+import type { Database } from '../db';
+import { quoteNotifications, quotes, favoriteNotifications } from '../db/schema';
 
-const fetchNotifications = async (req: Request, res: Response, db: Knex, jwt: JwtModule, accessTokenPayload: AccessTokenPayloadFn): Promise<void> => {
-	const trx = await db.transaction();
+const fetchNotifications = async (req: Request, res: Response, db: Database, jwt: JwtModule, accessTokenPayload: AccessTokenPayloadFn): Promise<void> => {
 	try {
 		const { username } = await accessTokenPayload(req, res, jwt, db);
-		const quoteNotifications = await trx('quote_notifications')
-			.select('quote_notifications.id', 'quote_notifications.notice', 'quote_notifications.quotes_id', 'quote_notifications.date', 'quotes.user_name')
-			.join('quotes', 'quotes.id', 'quote_notifications.quotes_id')
-			.where('quotes.user_name', username)
-			.orderBy('quote_notifications.id', 'desc')
-			.limit(10);
-		await trx('quote_notifications').update('read', 1).join('quotes', 'quotes.id', 'quote_notifications.quotes_id').where({ 'quotes.user_name': username, 'quote_notifications.read': 0 });
-		const favoriteNotifications = await trx('favorite_notifications').select('id', 'notice', 'to_user', 'date').where('to_user', username).orderBy('id', 'desc').limit(10);
-		await trx('favorite_notifications').update('read', 1).where('to_user', username);
-		const allNotifications: any[] = quoteNotifications;
-		favoriteNotifications.forEach((obj: any) => {
-			allNotifications.push(obj);
+
+		await db.transaction(async (tx) => {
+			// Quote notifications with join
+			const quoteNotifs = await tx.select({
+				id: quoteNotifications.id,
+				notice: quoteNotifications.notice,
+				quotesId: quoteNotifications.quotesId,
+				date: quoteNotifications.date,
+				userName: quotes.userName,
+			})
+				.from(quoteNotifications)
+				.innerJoin(quotes, eq(quotes.id, quoteNotifications.quotesId))
+				.where(eq(quotes.userName, username))
+				.orderBy(desc(quoteNotifications.id))
+				.limit(10);
+
+			// Mark quote notifications as read
+			await tx.update(quoteNotifications)
+				.set({ read: 1 })
+				.where(
+					and(
+						eq(quoteNotifications.read, 0),
+						eq(quoteNotifications.quotesId, quoteNotifications.quotesId)
+					)
+				);
+			// Since we need to filter by quotes.user_name, use raw sql for the joined update
+			// Drizzle doesn't support joined updates natively, so we use a subquery approach
+			const userQuoteIds = await tx.select({ id: quotes.id }).from(quotes).where(eq(quotes.userName, username));
+			const ids = userQuoteIds.map((q) => q.id);
+			if (ids.length) {
+				const { sql: sqlTag, inArray } = await import('drizzle-orm');
+				await tx.update(quoteNotifications)
+					.set({ read: 1 })
+					.where(and(
+						eq(quoteNotifications.read, 0),
+						inArray(quoteNotifications.quotesId, ids)
+					));
+			}
+
+			// Favorite notifications
+			const favoriteNotifs = await tx.select({
+				id: favoriteNotifications.id,
+				notice: favoriteNotifications.notice,
+				toUser: favoriteNotifications.toUser,
+				date: favoriteNotifications.date,
+			})
+				.from(favoriteNotifications)
+				.where(eq(favoriteNotifications.toUser, username))
+				.orderBy(desc(favoriteNotifications.id))
+				.limit(10);
+
+			// Mark favorite notifications as read
+			await tx.update(favoriteNotifications)
+				.set({ read: 1 })
+				.where(eq(favoriteNotifications.toUser, username));
+
+			// Combine and sort
+			const allNotifications = [
+				...quoteNotifs.map((n) => ({ ...n, type: 'quote' as const })),
+				...favoriteNotifs.map((n) => ({ ...n, type: 'favorite' as const })),
+			];
+			allNotifications.sort((a, b) => {
+				const dateA = a.date ? new Date(a.date).getTime() : 0;
+				const dateB = b.date ? new Date(b.date).getTime() : 0;
+				return dateB - dateA;
+			});
+
+			res.json(allNotifications);
 		});
-		allNotifications.sort((a: any, b: any) => b.date - a.date);
-		res.json(allNotifications);
-		await trx.commit();
 	} catch (error) {
-		await trx.rollback();
 		res.sendStatus(400);
 	}
 };

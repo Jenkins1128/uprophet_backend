@@ -1,16 +1,18 @@
 import { Request, Response } from 'express';
-import { Knex } from 'knex';
+import { eq } from 'drizzle-orm';
 import { CryptoModule } from '../types';
+import type { Database } from '../db';
+import { login } from '../db/schema';
 
 interface LoginRecord {
-	user_name: string;
+	userName: string;
 	password: string;
-	users_id: number;
-	user_registered: number;
+	usersId: number;
+	userRegistered: number;
 }
 
 const compare = (username: string, password: string, data: LoginRecord[], crypto: CryptoModule, NONCE_SALT: string, SITE_KEY: string): boolean => {
-	const storeg = data[0].user_registered;
+	const storeg = data[0].userRegistered;
 	//The hashed password of the stored matching user
 	const stopass = data[0].password;
 	//Recreate our NONCE used at registration
@@ -38,7 +40,7 @@ const hashPass = (username: string, password: string, userreg: number, crypto: C
 	return userpass;
 };
 
-const changePassword = async (req: Request, res: Response, db: Knex, crypto: CryptoModule, NONCE_SALT: string, SITE_KEY: string): Promise<void> => {
+const changePassword = async (req: Request, res: Response, db: Database, crypto: CryptoModule, NONCE_SALT: string, SITE_KEY: string): Promise<void> => {
 	const { username, password } = req.body;
 	if (!username || !password || !username.length || !password.length) {
 		res.sendStatus(400);
@@ -48,36 +50,36 @@ const changePassword = async (req: Request, res: Response, db: Knex, crypto: Cry
 	const hash = hashPass(username, password, userreg, crypto, NONCE_SALT, SITE_KEY);
 
 	try {
-		await db('login')
-			.update({
-				password: hash,
-				user_registered: userreg
-			})
-			.where('user_name', username);
+		await db.update(login)
+			.set({ password: hash, userRegistered: userreg })
+			.where(eq(login.userName, username));
 		res.sendStatus(200);
 	} catch (err) {
 		res.sendStatus(400);
 	}
 };
 
-const changePasswordSignin = async (req: Request, res: Response, db: Knex, crypto: CryptoModule, NONCE_SALT: string, SITE_KEY: string): Promise<void> => {
+const changePasswordSignin = async (req: Request, res: Response, db: Database, crypto: CryptoModule, NONCE_SALT: string, SITE_KEY: string): Promise<void> => {
 	const { username, password } = req.body;
 	if (!username || !password) {
 		res.sendStatus(400);
 		return;
 	}
 
-	const trx = await db.transaction();
 	try {
-		const data: LoginRecord[] = await trx('login').select('user_name', 'password', 'users_id', 'user_registered').where('user_name', username);
+		const data = await db.select({
+			userName: login.userName,
+			password: login.password,
+			usersId: login.usersId,
+			userRegistered: login.userRegistered,
+		}).from(login).where(eq(login.userName, username));
+
 		if (compare(username, password, data, crypto, NONCE_SALT, SITE_KEY)) {
 			res.sendStatus(200);
 		} else {
 			res.sendStatus(401);
 		}
-		await trx.commit();
 	} catch (err) {
-		await trx.rollback();
 		res.sendStatus(401);
 	}
 };

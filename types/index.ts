@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { Knex } from 'knex';
+import type { Database } from '../db';
 
 // The payload returned by accessTokenPayload
 export interface TokenPayload {
@@ -15,7 +15,7 @@ export type AccessTokenPayloadFn = (
 	req: Request,
 	res: Response,
 	jwt: JwtModule,
-	db: Knex
+	db: Database
 ) => Promise<TokenPayload>;
 
 // Common node crypto module type

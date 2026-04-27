@@ -1,82 +1,104 @@
 import { Request, Response } from 'express';
-import { Knex } from 'knex';
+import { eq, inArray, sql, count, desc } from 'drizzle-orm';
 import { JwtModule, AccessTokenPayloadFn } from '../types';
+import type { Database } from '../db';
+import { quotes, likes, favoriting, users } from '../db/schema';
 
-const fetchProfileQuotes = async (req: Request, res: Response, db: Knex, jwt: JwtModule, accessTokenPayload: AccessTokenPayloadFn): Promise<void> => {
+const fetchProfileQuotes = async (req: Request, res: Response, db: Database, jwt: JwtModule, accessTokenPayload: AccessTokenPayloadFn): Promise<void> => {
 	const { username } = req.body;
-	const trx = await db.transaction();
 	try {
 		const { id } = await accessTokenPayload(req, res, jwt, db);
-		//Get the latest quote from each user you are following
-		const userQuoteIds = await trx('quotes').select('id').where('user_name', username);
-		const extractedUserQuoteIds = userQuoteIds.map((userQuoteId: any) => userQuoteId['id']);
-		const quotes = await trx('quotes').select('*').whereIn('id', extractedUserQuoteIds).orderBy('id', 'desc');
+
+		const userQuoteIds = await db.select({ id: quotes.id })
+			.from(quotes)
+			.where(eq(quotes.userName, username));
+		const extractedIds = userQuoteIds.map((row) => row.id);
+
+		if (!extractedIds.length) {
+			res.json([]);
+			return;
+		}
+
+		const quotesResult = await db.select().from(quotes)
+			.where(inArray(quotes.id, extractedIds))
+			.orderBy(desc(quotes.id));
+
 		//Get quotes with like count added
-		const likeCountsForQuotes = await trx('likes').select('quotes_id').count('quotes_id as quoteLikeCount').whereIn('quotes_id', extractedUserQuoteIds).groupBy('quotes_id');
-		const likeCountsForQuotesMap = new Map<number, number>();
-		likeCountsForQuotes.forEach((likeCount: any) => {
-			likeCountsForQuotesMap.set(likeCount['quotes_id'], likeCount['quoteLikeCount']);
-		});
-		const quotesWithLikeCount = quotes.map((quote: any) => {
-			const quoteLikeCount = likeCountsForQuotesMap.has(quote['id']) ? likeCountsForQuotesMap.get(quote['id']) : 0;
-			return { ...quote, likeCount: quoteLikeCount };
-		});
+		const likeCounts = await db.select({
+			quotesId: likes.quotesId,
+			quoteLikeCount: count(likes.quotesId),
+		}).from(likes)
+			.where(inArray(likes.quotesId, extractedIds))
+			.groupBy(likes.quotesId);
+
+		const likeCountsMap = new Map<number, number>();
+		likeCounts.forEach((lc) => likeCountsMap.set(lc.quotesId, lc.quoteLikeCount));
+
 		//Add didLike to each quote
-		const quoteIds = await trx('likes')
-			.select('quotes_id')
-			.where((builder: any) => builder.where('users_id', id).whereIn('quotes_id', extractedUserQuoteIds))
-			.groupBy('quotes_id');
-		const quoteIdSet = new Set<number>();
-		quoteIds.forEach((quoteId: any) => {
-			quoteIdSet.add(quoteId['quotes_id']);
-		});
-		const finalQuotes = quotesWithLikeCount.map((quoteWithLikeCount: any) => {
-			return { ...quoteWithLikeCount, didLike: quoteIdSet.has(quoteWithLikeCount['id']) ? true : false };
-		});
+		const userLikedQuotes = await db.select({ quotesId: likes.quotesId })
+			.from(likes)
+			.where(sql`${likes.usersId} = ${id} AND ${likes.quotesId} IN ${extractedIds}`)
+			.groupBy(likes.quotesId);
+		const likedSet = new Set<number>(userLikedQuotes.map((q) => q.quotesId));
+
+		const finalQuotes = quotesResult.map((quote) => ({
+			...quote,
+			likeCount: likeCountsMap.get(quote.id) ?? 0,
+			didLike: likedSet.has(quote.id),
+		}));
+
 		res.json(finalQuotes);
-		await trx.commit();
 	} catch (error) {
-		await trx.rollback();
 		res.sendStatus(400);
 	}
 };
 
-const getUserInfo = async (req: Request, res: Response, db: Knex, jwt: JwtModule, accessTokenPayload: AccessTokenPayloadFn): Promise<void> => {
+const getUserInfo = async (req: Request, res: Response, db: Database, jwt: JwtModule, accessTokenPayload: AccessTokenPayloadFn): Promise<void> => {
 	const { username } = req.body;
 	const profileUser = username;
-	const trx = await db.transaction();
 	try {
-		const { username } = await accessTokenPayload(req, res, jwt, db);
+		const { username: currentUser } = await accessTokenPayload(req, res, jwt, db);
+
 		//favoriters, favoriting counts
-		const favoriters = await trx('favoriting').count('to_user as favoriters').where('to_user', profileUser);
-		const favoriting = await trx('favoriting').count('from_user as favoriting').where('from_user', profileUser);
-		const favoritingCounts = {
-			favoriters: favoriters.length ? (favoriters[0] as any)['favoriters'] : 0,
-			favoriting: favoriting.length ? (favoriting[0] as any)['favoriting'] : 0
-		};
-		//Add didFavortie to each user
-		const userFavoriting = await trx('favoriting')
-			.select('to_user')
-			.where((builder: any) => builder.where('from_user', username).where('to_user', profileUser));
-		const didFavorite = userFavoriting.length ? true : false;
+		const favoritersCount = await db.select({ count: count(favoriting.toUser) })
+			.from(favoriting)
+			.where(eq(favoriting.toUser, profileUser));
+		const favoritingCount = await db.select({ count: count(favoriting.fromUser) })
+			.from(favoriting)
+			.where(eq(favoriting.fromUser, profileUser));
+
+		//Add didFavorite to each user
+		const userFavoritingResult = await db.select({ toUser: favoriting.toUser })
+			.from(favoriting)
+			.where(sql`${favoriting.fromUser} = ${currentUser} AND ${favoriting.toUser} = ${profileUser}`);
+		const didFavorite = userFavoritingResult.length > 0;
+
 		//bio
-		const bio = await trx('users').select('bio').where('user_name', profileUser);
-		//userInfo
-		const userInfo = { currentUser: username, didFavorite: didFavorite, favoriters: favoritingCounts.favoriters, favoriting: favoritingCounts.favoriting, bio: (bio[0] as any).bio };
+		const bioResult = await db.select({ bio: users.bio })
+			.from(users)
+			.where(eq(users.userName, profileUser));
+
+		const userInfo = {
+			currentUser,
+			didFavorite,
+			favoriters: favoritersCount[0]?.count ?? 0,
+			favoriting: favoritingCount[0]?.count ?? 0,
+			bio: bioResult[0]?.bio ?? null,
+		};
 		res.json(userInfo);
-		await trx.commit();
 	} catch {
-		await trx.rollback();
 		res.sendStatus(400);
 	}
 };
 
-const getCurrentUserInfo = async (req: Request, res: Response, db: Knex, jwt: JwtModule, accessTokenPayload: AccessTokenPayloadFn): Promise<void> => {
+const getCurrentUserInfo = async (req: Request, res: Response, db: Database, jwt: JwtModule, accessTokenPayload: AccessTokenPayloadFn): Promise<void> => {
 	try {
 		const { username } = await accessTokenPayload(req, res, jwt, db);
 		//bio
-		const bio = await db('users').select('bio').where('user_name', username);
-		const userInfo = { currentUser: username, bio: (bio[0] as any).bio };
+		const bioResult = await db.select({ bio: users.bio })
+			.from(users)
+			.where(eq(users.userName, username));
+		const userInfo = { currentUser: username, bio: bioResult[0]?.bio ?? null };
 		res.json(userInfo);
 	} catch {
 		res.sendStatus(400);

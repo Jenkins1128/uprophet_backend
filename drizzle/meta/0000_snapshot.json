@@ -1,0 +1,518 @@
+{
+  "id": "00000000-0000-0000-0000-000000000000",
+  "prevId": "",
+  "version": "5",
+  "dialect": "mysql",
+  "tables": {
+    "comments": {
+      "name": "comments",
+      "columns": {
+        "id": {
+          "autoincrement": true,
+          "name": "id",
+          "type": "bigint unsigned",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "quotes_id": {
+          "autoincrement": false,
+          "name": "quotes_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "comment": {
+          "autoincrement": false,
+          "name": "comment",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "commenter": {
+          "autoincrement": false,
+          "name": "commenter",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "date_posted": {
+          "autoincrement": false,
+          "name": "date_posted",
+          "type": "datetime",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "compositePrimaryKeys": {
+        "comments_id": {
+          "name": "comments_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "indexes": {
+        "quotes_id_idx": {
+          "name": "quotes_id_idx",
+          "columns": [
+            "quotes_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "quotes_id": {
+          "name": "quotes_id",
+          "tableFrom": "comments",
+          "tableTo": "quotes",
+          "columnsFrom": [
+            "quotes_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "cascade"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "favorite_notifications": {
+      "name": "favorite_notifications",
+      "columns": {
+        "id": {
+          "autoincrement": true,
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "notice": {
+          "autoincrement": false,
+          "name": "notice",
+          "type": "tinytext",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "to_user": {
+          "autoincrement": false,
+          "name": "to_user",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "read": {
+          "default": 0,
+          "autoincrement": false,
+          "name": "read",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "date": {
+          "autoincrement": false,
+          "name": "date",
+          "type": "datetime",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "compositePrimaryKeys": {
+        "favorite_notifications_id": {
+          "name": "favorite_notifications_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "favoriting": {
+      "name": "favoriting",
+      "columns": {
+        "from_user": {
+          "autoincrement": false,
+          "name": "from_user",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "to_user": {
+          "autoincrement": false,
+          "name": "to_user",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "compositePrimaryKeys": {
+        "favoriting_from_user_to_user": {
+          "name": "favoriting_from_user_to_user",
+          "columns": [
+            "from_user",
+            "to_user"
+          ]
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "likes": {
+      "name": "likes",
+      "columns": {
+        "users_id": {
+          "autoincrement": false,
+          "name": "users_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "quotes_id": {
+          "autoincrement": false,
+          "name": "quotes_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "compositePrimaryKeys": {
+        "likes_users_id_quotes_id": {
+          "name": "likes_users_id_quotes_id",
+          "columns": [
+            "users_id",
+            "quotes_id"
+          ]
+        }
+      },
+      "indexes": {
+        "quotes_id_idx": {
+          "name": "quotes_id_idx",
+          "columns": [
+            "quotes_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "like_quotes_id": {
+          "name": "like_quotes_id",
+          "tableFrom": "likes",
+          "tableTo": "quotes",
+          "columnsFrom": [
+            "quotes_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "cascade"
+        },
+        "like_users_id": {
+          "name": "like_users_id",
+          "tableFrom": "likes",
+          "tableTo": "users",
+          "columnsFrom": [
+            "users_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "cascade"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "login": {
+      "name": "login",
+      "columns": {
+        "id": {
+          "autoincrement": true,
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "password": {
+          "autoincrement": false,
+          "name": "password",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_name": {
+          "autoincrement": false,
+          "name": "user_name",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "users_id": {
+          "autoincrement": false,
+          "name": "users_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_registered": {
+          "autoincrement": false,
+          "name": "user_registered",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "compositePrimaryKeys": {
+        "login_id": {
+          "name": "login_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "indexes": {
+        "_idx": {
+          "name": "_idx",
+          "columns": [
+            "users_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "users_id": {
+          "name": "users_id",
+          "tableFrom": "login",
+          "tableTo": "users",
+          "columnsFrom": [
+            "users_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "cascade"
+        }
+      },
+      "uniqueConstraints": {
+        "user_name_UNIQUE": {
+          "name": "user_name_UNIQUE",
+          "columns": [
+            "user_name"
+          ]
+        }
+      },
+      "checkConstraint": {}
+    },
+    "quote_notifications": {
+      "name": "quote_notifications",
+      "columns": {
+        "id": {
+          "autoincrement": true,
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "notice": {
+          "autoincrement": false,
+          "name": "notice",
+          "type": "tinytext",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "quotes_id": {
+          "autoincrement": false,
+          "name": "quotes_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "read": {
+          "default": 0,
+          "autoincrement": false,
+          "name": "read",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "date": {
+          "autoincrement": false,
+          "name": "date",
+          "type": "datetime",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "compositePrimaryKeys": {
+        "quote_notifications_id": {
+          "name": "quote_notifications_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "indexes": {
+        "quotes_id_idx": {
+          "name": "quotes_id_idx",
+          "columns": [
+            "quotes_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "quotes": {
+      "name": "quotes",
+      "columns": {
+        "id": {
+          "autoincrement": true,
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_name": {
+          "autoincrement": false,
+          "name": "user_name",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "title": {
+          "autoincrement": false,
+          "name": "title",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "quote": {
+          "autoincrement": false,
+          "name": "quote",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "date_posted": {
+          "autoincrement": false,
+          "name": "date_posted",
+          "type": "datetime",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "compositePrimaryKeys": {
+        "quotes_id": {
+          "name": "quotes_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "users": {
+      "name": "users",
+      "columns": {
+        "id": {
+          "autoincrement": true,
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "autoincrement": false,
+          "name": "name",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "user_name": {
+          "autoincrement": false,
+          "name": "user_name",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "email": {
+          "autoincrement": false,
+          "name": "email",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "photo": {
+          "autoincrement": false,
+          "name": "photo",
+          "type": "longblob",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "bio": {
+          "autoincrement": false,
+          "name": "bio",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "photo_name": {
+          "autoincrement": false,
+          "name": "photo_name",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "refresh_token": {
+          "autoincrement": false,
+          "name": "refresh_token",
+          "type": "varchar(1000)",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "compositePrimaryKeys": {
+        "users_id": {
+          "name": "users_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "uniqueConstraints": {
+        "user_name_UNIQUE": {
+          "name": "user_name_UNIQUE",
+          "columns": [
+            "user_name"
+          ]
+        }
+      },
+      "checkConstraint": {}
+    }
+  },
+  "views": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {}
+  },
+  "internal": {
+    "tables": {},
+    "indexes": {}
+  }
+}

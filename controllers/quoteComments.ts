@@ -1,42 +1,46 @@
 import { Request, Response } from 'express';
-import { Knex } from 'knex';
+import { eq, desc } from 'drizzle-orm';
+import type { Database } from '../db';
+import { comments, quoteNotifications } from '../db/schema';
 import { JwtModule, AccessTokenPayloadFn } from '../types';
 
-const fetchComments = async (req: Request, res: Response, db: Knex): Promise<void> => {
+const fetchComments = async (req: Request, res: Response, db: Database): Promise<void> => {
 	const { quoteId } = req.body;
 	try {
-		const commentDetails = await db('comments').select('*').where('quotes_id', quoteId);
-		commentDetails.sort((a: any, b: any) => b.date_posted - a.date_posted);
+		const commentDetails = await db.select().from(comments)
+			.where(eq(comments.quotesId, quoteId))
+			.orderBy(desc(comments.id));
 		res.json(commentDetails);
 	} catch (error) {
 		res.sendStatus(400);
 	}
 };
 
-const addComment = async (req: Request, res: Response, db: Knex, jwt: JwtModule, accessTokenPayload: AccessTokenPayloadFn): Promise<void> => {
+const addComment = async (req: Request, res: Response, db: Database, jwt: JwtModule, accessTokenPayload: AccessTokenPayloadFn): Promise<void> => {
 	const { quoteId, comment } = req.body;
-	const trx = await db.transaction();
-	const date = process.env.NODE_ENV === 'production' 
+	const date = process.env.NODE_ENV === 'production'
 		? new Date().toISOString().replace('T', ' ').substr(0, 19)
 		: new Date().toLocaleString('sv-SE').slice(0, 19);
 	try {
 		const { username } = await accessTokenPayload(req, res, jwt, db);
-		const commentId = await trx('comments').insert({
-			quotes_id: quoteId,
-			comment: comment,
-			commenter: username,
-			date_posted: date
+		await db.transaction(async (tx) => {
+			const result = await tx.insert(comments).values({
+				quotesId: quoteId,
+				comment: comment,
+				commenter: username,
+				datePosted: date,
+			}).$returningId();
+
+			await tx.insert(quoteNotifications).values({
+				notice: `${username} commented on your quote.`,
+				quotesId: quoteId,
+				date: date,
+			});
+
+			const addedComment = await tx.select().from(comments).where(eq(comments.id, (result[0] as { id: number }).id));
+			res.json({ ...addedComment[0] });
 		});
-		await trx('quote_notifications').insert({
-			notice: `${username} commented on your quote.`,
-			quotes_id: quoteId,
-			date: date
-		});
-		const addedComment = await trx('comments').select('*').where('id', commentId[0]);
-		res.json({ ...addedComment[0] });
-		await trx.commit();
 	} catch {
-		await trx.rollback();
 		res.sendStatus(400);
 	}
 };

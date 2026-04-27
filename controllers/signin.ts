@@ -1,17 +1,19 @@
 import { Request, Response } from 'express';
-import { Knex } from 'knex';
 import type { SignOptions } from 'jsonwebtoken';
+import { eq } from 'drizzle-orm';
 import { TokenPayload, JwtModule, AccessTokenPayloadFn, CryptoModule } from '../types';
+import type { Database } from '../db';
+import { login, users } from '../db/schema';
 
 interface LoginRecord {
-	user_name: string;
+	userName: string;
 	password: string;
-	users_id: number;
-	user_registered: number;
+	usersId: number;
+	userRegistered: number;
 }
 
 const compare = (username: string, password: string, data: LoginRecord[], crypto: CryptoModule, NONCE_SALT: string, SITE_KEY: string): boolean => {
-	const storeg = data[0].user_registered;
+	const storeg = data[0].userRegistered;
 	//The hashed password of the stored matching user
 	const stopass = data[0].password;
 	//Recreate our NONCE used at registration
@@ -27,10 +29,10 @@ const compare = (username: string, password: string, data: LoginRecord[], crypto
 	return subpass === stopass;
 };
 
-const logout = async (req: Request, res: Response, db: Knex, jwt: JwtModule, accessTokenPayload: AccessTokenPayloadFn): Promise<void> => {
+const logout = async (req: Request, res: Response, db: Database, jwt: JwtModule, accessTokenPayload: AccessTokenPayloadFn): Promise<void> => {
 	try {
 		const { username } = await accessTokenPayload(req, res, jwt, db);
-		await db('users').update('refresh_token', '').where('user_name', username);
+		await db.update(users).set({ refreshToken: '' }).where(eq(users.userName, username));
 		res.clearCookie('upUserId');
 		res.sendStatus(204);
 	} catch (error) {
@@ -38,7 +40,7 @@ const logout = async (req: Request, res: Response, db: Knex, jwt: JwtModule, acc
 	}
 };
 
-const accessTokenPayload = async (req: Request, res: Response, jwt: JwtModule, db: Knex): Promise<TokenPayload> => {
+const accessTokenPayload = async (req: Request, res: Response, jwt: JwtModule, db: Database): Promise<TokenPayload> => {
 	let accessToken: string = req.cookies.upUserId;
 	if (!accessToken) {
 		throw new Error('403');
@@ -54,19 +56,21 @@ const accessTokenPayload = async (req: Request, res: Response, jwt: JwtModule, d
 	const base64Payload = accessToken.split('.')[1];
 	const payload = JSON.parse(Buffer.from(base64Payload, 'base64').toString('utf-8')) as TokenPayload;
 	//retrieve the refresh token from database
-	let refreshToken: { refresh_token: string }[];
+	let refreshTokenRows: { refreshToken: string | null }[];
 	try {
-		refreshToken = await db('users').select('refresh_token').where('user_name', payload.username);
+		refreshTokenRows = await db.select({ refreshToken: users.refreshToken })
+			.from(users)
+			.where(eq(users.userName, payload.username));
 	} catch (error) {
 		throw new Error('400');
 	}
 
-	if (!refreshToken.length) {
+	if (!refreshTokenRows.length || !refreshTokenRows[0].refreshToken) {
 		throw new Error('403');
 	}
 	//verify the refresh token
 	try {
-		jwt.verify(refreshToken[0].refresh_token, process.env.REFRESH_TOKEN_SECRET!);
+		jwt.verify(refreshTokenRows[0].refreshToken, process.env.REFRESH_TOKEN_SECRET!);
 	} catch (e) {
 		throw new Error('403');
 	}
@@ -87,13 +91,18 @@ const accessTokenPayload = async (req: Request, res: Response, jwt: JwtModule, d
 	return newTokenPayload;
 };
 
-const handleSignin = async (req: Request, res: Response, db: Knex, crypto: CryptoModule, NONCE_SALT: string, SITE_KEY: string, jwt: JwtModule): Promise<void> => {
+const handleSignin = async (req: Request, res: Response, db: Database, crypto: CryptoModule, NONCE_SALT: string, SITE_KEY: string, jwt: JwtModule): Promise<void> => {
 	const { username, password } = req.body;
-	const trx = await db.transaction();
 	try {
-		const data: LoginRecord[] = await trx('login').select('user_name', 'password', 'users_id', 'user_registered').where('user_name', username);
+		const data = await db.select({
+			userName: login.userName,
+			password: login.password,
+			usersId: login.usersId,
+			userRegistered: login.userRegistered,
+		}).from(login).where(eq(login.userName, username));
+
 		if (compare(username, password, data, crypto, NONCE_SALT, SITE_KEY)) {
-			const payload = { id: data[0].users_id, username: data[0].user_name };
+			const payload = { id: data[0].usersId, username: data[0].userName };
 			const accessSignOptions: SignOptions = {
 				algorithm: 'HS256',
 				expiresIn: process.env.ACCESS_TOKEN_LIFE as any,
@@ -104,7 +113,7 @@ const handleSignin = async (req: Request, res: Response, db: Knex, crypto: Crypt
 				expiresIn: process.env.REFRESH_TOKEN_LIFE as any,
 			};
 			const refreshToken = jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET!, refreshSignOptions);
-			await trx('users').update('refresh_token', refreshToken).where('user_name', username);
+			await db.update(users).set({ refreshToken }).where(eq(users.userName, username));
 			res.cookie('upUserId', accessToken, {
 				httpOnly: true,
 				secure: true, // Must be true for HTTPS
@@ -115,9 +124,7 @@ const handleSignin = async (req: Request, res: Response, db: Knex, crypto: Crypt
 		} else {
 			res.sendStatus(401);
 		}
-		await trx.commit();
 	} catch (err) {
-		await trx.rollback();
 		res.sendStatus(401);
 	}
 };

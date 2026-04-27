@@ -1,21 +1,40 @@
 import { Request, Response } from 'express';
-import { Knex } from 'knex';
+import { eq, count, and, inArray } from 'drizzle-orm';
 import { JwtModule, AccessTokenPayloadFn } from '../types';
+import type { Database } from '../db';
+import { quoteNotifications, quotes, favoriteNotifications } from '../db/schema';
 
-const getNotificationCount = async (req: Request, res: Response, db: Knex, jwt: JwtModule, accessTokenPayload: AccessTokenPayloadFn): Promise<void> => {
-	const trx = await db.transaction();
+const getNotificationCount = async (req: Request, res: Response, db: Database, jwt: JwtModule, accessTokenPayload: AccessTokenPayloadFn): Promise<void> => {
 	try {
 		const { username } = await accessTokenPayload(req, res, jwt, db);
-		//Add notification count
-		const newQuoteNotificationsCount = await trx('quote_notifications')
-			.count('quote_notifications.id as newQuoteNotifications')
-			.join('quotes', 'quotes.id', 'quote_notifications.quotes_id')
-			.where({ 'quotes.user_name': username, 'quote_notifications.read': 0 });
-		const newFavoriteNotificationsCount = await trx('favorite_notifications').count('favorite_notifications.id as newFavoriteNotifications').where({ 'favorite_notifications.to_user': username, 'favorite_notifications.read': 0 });
-		res.json({ notificationCount: (newQuoteNotificationsCount[0] as any)['newQuoteNotifications'] + (newFavoriteNotificationsCount[0] as any)['newFavoriteNotifications'] });
-		await trx.commit();
+
+		// Get user's quote IDs for notification lookup
+		const userQuotes = await db.select({ id: quotes.id })
+			.from(quotes)
+			.where(eq(quotes.userName, username));
+		const quoteIds = userQuotes.map((q) => q.id);
+
+		let quoteNotifCount = 0;
+		if (quoteIds.length) {
+			const quoteNotifResult = await db.select({ count: count(quoteNotifications.id) })
+				.from(quoteNotifications)
+				.where(and(
+					inArray(quoteNotifications.quotesId, quoteIds),
+					eq(quoteNotifications.read, 0)
+				));
+			quoteNotifCount = quoteNotifResult[0]?.count ?? 0;
+		}
+
+		const favoriteNotifResult = await db.select({ count: count(favoriteNotifications.id) })
+			.from(favoriteNotifications)
+			.where(and(
+				eq(favoriteNotifications.toUser, username),
+				eq(favoriteNotifications.read, 0)
+			));
+		const favoriteNotifCount = favoriteNotifResult[0]?.count ?? 0;
+
+		res.json({ notificationCount: quoteNotifCount + favoriteNotifCount });
 	} catch (error) {
-		await trx.rollback();
 		res.sendStatus(400);
 	}
 };

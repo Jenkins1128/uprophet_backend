@@ -5,7 +5,7 @@ import cors from 'cors';
 import crypto from 'crypto';
 import cookieParser from 'cookie-parser';
 import fileUpload from 'express-fileupload';
-import knex from 'knex';
+import { db } from './db';
 import { getUser } from './controllers/user';
 import { handleSignin, accessTokenPayload, logout } from './controllers/signin';
 import { handleSignup } from './controllers/signup';
@@ -30,17 +30,6 @@ const app = express();
 const SITE_KEY = process.env.SITE_KEY!;
 const NONCE_SALT = process.env.NONCE_SALT!;
 
-const isProd = false;
-//DB
-const db = knex({
-	client: 'mysql2',
-	connection:	isProd ? process.env.MYSQL_URL :{
-		host: process.env.HOST,
-		user: process.env.USER_DEV,
-		password: process.env.PASSWORD_DEV,
-		database: process.env.DATABASE_DEV
-	}
-});
 //MIDDLEWARE
 app.use(cors({
 	credentials: true,
@@ -100,5 +89,5 @@ app.delete('/api/deleteQuote', (req, res) => deleteQuotePost(req, res, db));
 const PORT = process.env.PORT || 3001;
 
 app.listen(PORT, () => {
-	console.log(`app is running on port 3001`);
+	console.log(`app is running on port ${PORT}`);
 });

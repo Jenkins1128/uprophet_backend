@@ -1,30 +1,33 @@
 import { Request, Response } from 'express';
-import { Knex } from 'knex';
+import { eq } from 'drizzle-orm';
 import { JwtModule, AccessTokenPayloadFn } from '../types';
+import type { Database } from '../db';
+import { users } from '../db/schema';
 
-const uploadPhoto = async (req: Request, res: Response, db: Knex, jwt: JwtModule, accessTokenPayload: AccessTokenPayloadFn): Promise<void> => {
+const uploadPhoto = async (req: Request, res: Response, db: Database, jwt: JwtModule, accessTokenPayload: AccessTokenPayloadFn): Promise<void> => {
 	const { name, image } = req.body;
 	try {
 		const { username } = await accessTokenPayload(req, res, jwt, db);
-		await db('users')
-			.update({
-				photo_name: name,
-				photo: image
+		await db.update(users)
+			.set({
+				photoName: name,
+				photo: Buffer.from(image, 'utf-8'),
 			})
-			.where('user_name', username);
+			.where(eq(users.userName, username));
 		res.sendStatus(200);
 	} catch (error) {
 		res.sendStatus(400);
 	}
 };
 
-const fetchPhoto = async (req: Request, res: Response, db: Knex): Promise<void> => {
+const fetchPhoto = async (req: Request, res: Response, db: Database): Promise<void> => {
 	const { username } = req.body;
 	try {
-		const img = await db('users').select('photo').where('user_name', username);
-		if (img.length && (img[0] as any)['photo']) {
-			const buffer = (img[0] as any)['photo'];
-			res.json({ photo: buffer.toString() });
+		const img = await db.select({ photo: users.photo })
+			.from(users)
+			.where(eq(users.userName, username));
+		if (img.length && img[0].photo) {
+			res.json({ photo: img[0].photo.toString() });
 		} else {
 			res.json({ photo: null });
 		}

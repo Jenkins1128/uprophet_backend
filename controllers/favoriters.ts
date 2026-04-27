@@ -1,34 +1,39 @@
 import { Request, Response } from 'express';
-import { Knex } from 'knex';
+import { eq, sql, inArray } from 'drizzle-orm';
 import { JwtModule, AccessTokenPayloadFn } from '../types';
+import type { Database } from '../db';
+import { favoriting } from '../db/schema';
 
-const fetchFavoriters = async (req: Request, res: Response, db: Knex, jwt: JwtModule, accessTokenPayload: AccessTokenPayloadFn): Promise<void> => {
+const fetchFavoriters = async (req: Request, res: Response, db: Database, jwt: JwtModule, accessTokenPayload: AccessTokenPayloadFn): Promise<void> => {
 	const { username } = req.body;
 	const toUser = username;
-	const trx = await db.transaction();
 	try {
-		const { username } = await accessTokenPayload(req, res, jwt, db);
-		const allFavoriters = await trx('favoriting').select('from_user').where('to_user', toUser);
-		const resultUsers = allFavoriters.map((result: any) => result.from_user);
-		//Add didFavortie to each user
-		let finalUsers: any[] = [];
-		if (resultUsers.length) {
-			const usersFavoriting = await trx('favoriting')
-				.select('to_user')
-				.where((builder: any) => builder.where('from_user', username).whereIn('to_user', resultUsers));
-			const usersSet = new Set<string>();
-			usersFavoriting.forEach((user: any) => {
-				usersSet.add(user['to_user']);
-			});
-			const finalResultUsers = allFavoriters.map((user: any) => {
-				return { ...user, currentUser: username, didFavorite: usersSet.has(user['from_user']) ? true : false };
-			});
-			finalUsers = finalResultUsers;
+		const { username: currentUser } = await accessTokenPayload(req, res, jwt, db);
+
+		const allFavoriters = await db.select({ fromUser: favoriting.fromUser })
+			.from(favoriting)
+			.where(eq(favoriting.toUser, toUser));
+		const resultUsers = allFavoriters.map((r) => r.fromUser);
+
+		if (!resultUsers.length) {
+			res.json([]);
+			return;
 		}
-		res.json(finalUsers);
-		await trx.commit();
+
+		//Add didFavorite to each user
+		const usersFavoritingResult = await db.select({ toUser: favoriting.toUser })
+			.from(favoriting)
+			.where(sql`${favoriting.fromUser} = ${currentUser} AND ${favoriting.toUser} IN ${resultUsers}`);
+		const favoritedSet = new Set<string>(usersFavoritingResult.map((u) => u.toUser));
+
+		const finalResultUsers = allFavoriters.map((user) => ({
+			from_user: user.fromUser,
+			currentUser: currentUser,
+			didFavorite: favoritedSet.has(user.fromUser),
+		}));
+
+		res.json(finalResultUsers);
 	} catch {
-		await trx.rollback();
 		res.sendStatus(400);
 	}
 };

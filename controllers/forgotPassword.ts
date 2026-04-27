@@ -1,7 +1,9 @@
 import { Request, Response } from 'express';
-import { Knex } from 'knex';
+import { eq } from 'drizzle-orm';
 import { Resend } from 'resend';
 import { CryptoModule } from '../types';
+import type { Database } from '../db';
+import { login, users } from '../db/schema';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -36,7 +38,7 @@ function randomString(crypto: CryptoModule, size: number): string {
 	return crypto.randomBytes(size).toString('base64').slice(0, size);
 }
 
-const changePassword = async (res: Response, username: string, db: Knex, crypto: CryptoModule, NONCE_SALT: string, SITE_KEY: string): Promise<string | void> => {
+const resetPassword = async (res: Response, username: string, db: Database, crypto: CryptoModule, NONCE_SALT: string, SITE_KEY: string): Promise<string | void> => {
 	if (!username.length) {
 		res.status(400).json('incorrect form submission');
 		return;
@@ -46,32 +48,31 @@ const changePassword = async (res: Response, username: string, db: Knex, crypto:
 	const hash = hashPass(username, randPass, userreg, crypto, NONCE_SALT, SITE_KEY);
 
 	try {
-		await db('login')
-			.update({
-				password: hash,
-				user_registered: userreg
-			})
-			.where('user_name', username);
+		await db.update(login)
+			.set({ password: hash, userRegistered: userreg })
+			.where(eq(login.userName, username));
 		return randPass;
 	} catch (err) {
 		res.status(400).json('user name does not exist: ' + err);
 	}
 };
 
-const forgotPassword = async (req: Request, res: Response, db: Knex, crypto: CryptoModule, NONCE_SALT: string, SITE_KEY: string): Promise<void> => {
+const forgotPassword = async (req: Request, res: Response, db: Database, crypto: CryptoModule, NONCE_SALT: string, SITE_KEY: string): Promise<void> => {
 	const { username, email } = req.body;
 	try {
-		const userEmail = await db('users').select('email').where('user_name', username);
+		const userEmail = await db.select({ email: users.email })
+			.from(users)
+			.where(eq(users.userName, username));
 		if (userEmail.length && userEmail[0].email !== email) {
 			throw new Error('Email mismatch');
 		}
-		console.log("forogt userEmail found", userEmail);
-		const tempPass = await changePassword(res, username, db, crypto, NONCE_SALT, SITE_KEY);
+		console.log("forgot userEmail found", userEmail);
+		const tempPass = await resetPassword(res, username, db, crypto, NONCE_SALT, SITE_KEY);
 		console.log("tempPass created!", userEmail);
-		await sendMail(username, userEmail[0].email, tempPass as string);
+		await sendMail(username, userEmail[0].email!, tempPass as string);
 		res.sendStatus(200);
 	} catch (error) {
-		console.error("DETAILED AUTH ERROR:", error); // This is the gold mine for debugging
+		console.error("DETAILED AUTH ERROR:", error);
 		res.sendStatus(400);
 	}
 };
