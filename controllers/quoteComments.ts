@@ -1,15 +1,19 @@
-const fetchComments = async (req, res, db) => {
+import { Request, Response } from 'express';
+import { Knex } from 'knex';
+import { JwtModule, AccessTokenPayloadFn } from '../types';
+
+const fetchComments = async (req: Request, res: Response, db: Knex): Promise<void> => {
 	const { quoteId } = req.body;
 	try {
 		const commentDetails = await db('comments').select('*').where('quotes_id', quoteId);
-		commentDetails.sort((a, b) => b.date_posted - a.date_posted);
+		commentDetails.sort((a: any, b: any) => b.date_posted - a.date_posted);
 		res.json(commentDetails);
 	} catch (error) {
 		res.sendStatus(400);
 	}
 };
 
-const addComment = async (req, res, db, jwt, accessTokenPayload) => {
+const addComment = async (req: Request, res: Response, db: Knex, jwt: JwtModule, accessTokenPayload: AccessTokenPayloadFn): Promise<void> => {
 	const { quoteId, comment } = req.body;
 	const trx = await db.transaction();
 	const date = process.env.NODE_ENV === 'production' 
@@ -37,4 +41,4 @@ const addComment = async (req, res, db, jwt, accessTokenPayload) => {
 	}
 };
 
-module.exports = { fetchComments, addComment };
+export { fetchComments, addComment };
