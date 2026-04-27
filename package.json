@@ -4,7 +4,7 @@
 	"description": "",
 	"main": "script.js",
 	"scripts": {
-		"start": "nodemon server.js",
+		"start": "nodemon -e ts,js,json --exec 'node -r ts-node/register server.js'",
 		"typecheck": "tsc --noEmit",
 		"build": "tsc"
 	},

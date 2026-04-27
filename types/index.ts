@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import { Knex } from 'knex';
-import * as jwt from 'jsonwebtoken';
 
 // The payload returned by accessTokenPayload
 export interface TokenPayload {
@@ -8,11 +7,14 @@ export interface TokenPayload {
 	username: string;
 }
 
+// JWT module type
+export type JwtModule = typeof import('jsonwebtoken');
+
 // Signature of the accessTokenPayload helper function
 export type AccessTokenPayloadFn = (
 	req: Request,
 	res: Response,
-	jwt: typeof import('jsonwebtoken'),
+	jwt: JwtModule,
 	db: Knex
 ) => Promise<TokenPayload>;
 

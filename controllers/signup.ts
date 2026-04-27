@@ -1,4 +1,8 @@
-const hashPass = (username, password, userreg, crypto, NONCE_SALT, SITE_KEY) => {
+import { Request, Response } from 'express';
+import { Knex } from 'knex';
+import { CryptoModule } from '../types';
+
+const hashPass = (username: string, password: string, userreg: number, crypto: CryptoModule, NONCE_SALT: string, SITE_KEY: string): string => {
 	const nonce = crypto
 		.createHash('md5')
 		.update('registration-' + username + userreg + NONCE_SALT)
@@ -10,7 +14,7 @@ const hashPass = (username, password, userreg, crypto, NONCE_SALT, SITE_KEY) => 
 	return userpass;
 };
 
-const handleSignup = async (req, res, db, crypto, NONCE_SALT, SITE_KEY) => {
+const handleSignup = async (req: Request, res: Response, db: Knex, crypto: CryptoModule, NONCE_SALT: string, SITE_KEY: string): Promise<void> => {
 	const { username, name, email, password } = req.body;
 	const userreg = new Date().getTime();
 	const hash = hashPass(username, password, userreg, crypto, NONCE_SALT, SITE_KEY);
@@ -37,6 +41,6 @@ const handleSignup = async (req, res, db, crypto, NONCE_SALT, SITE_KEY) => {
 	}
 };
 
-module.exports = {
+export {
 	handleSignup
 };
