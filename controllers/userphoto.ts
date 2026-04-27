@@ -1,4 +1,8 @@
-const uploadPhoto = async (req, res, db, jwt, accessTokenPayload) => {
+import { Request, Response } from 'express';
+import { Knex } from 'knex';
+import { JwtModule, AccessTokenPayloadFn } from '../types';
+
+const uploadPhoto = async (req: Request, res: Response, db: Knex, jwt: JwtModule, accessTokenPayload: AccessTokenPayloadFn): Promise<void> => {
 	const { name, image } = req.body;
 	try {
 		const { username } = await accessTokenPayload(req, res, jwt, db);
@@ -14,12 +18,12 @@ const uploadPhoto = async (req, res, db, jwt, accessTokenPayload) => {
 	}
 };
 
-const fetchPhoto = async (req, res, db) => {
+const fetchPhoto = async (req: Request, res: Response, db: Knex): Promise<void> => {
 	const { username } = req.body;
 	try {
 		const img = await db('users').select('photo').where('user_name', username);
-		if (img.length && img[0]['photo']) {
-			const buffer = img[0]['photo'];
+		if (img.length && (img[0] as any)['photo']) {
+			const buffer = (img[0] as any)['photo'];
 			res.json({ photo: buffer.toString() });
 		} else {
 			res.json({ photo: null });
@@ -29,4 +33,4 @@ const fetchPhoto = async (req, res, db) => {
 	}
 };
 
-module.exports = { uploadPhoto, fetchPhoto };
+export { uploadPhoto, fetchPhoto };

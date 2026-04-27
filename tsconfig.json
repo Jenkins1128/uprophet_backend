@@ -8,7 +8,6 @@
 		"resolveJsonModule": true,
 		"outDir": "./dist",
 		"rootDir": "./",
-		"allowJs": true,
 		"skipLibCheck": true,
 		"forceConsistentCasingInFileNames": true,
 		"declaration": true,

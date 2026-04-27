@@ -1,4 +1,8 @@
-const likeQuote = async (req, res, db, jwt, accessTokenPayload) => {
+import { Request, Response } from 'express';
+import { Knex } from 'knex';
+import { JwtModule, AccessTokenPayloadFn } from '../types';
+
+const likeQuote = async (req: Request, res: Response, db: Knex, jwt: JwtModule, accessTokenPayload: AccessTokenPayloadFn): Promise<void> => {
 	const { quoteId } = req.body;
 	const trx = await db.transaction();
 	try {
@@ -23,7 +27,7 @@ const likeQuote = async (req, res, db, jwt, accessTokenPayload) => {
 	}
 };
 
-const unlikeQuote = async (req, res, db, jwt, accessTokenPayload) => {
+const unlikeQuote = async (req: Request, res: Response, db: Knex, jwt: JwtModule, accessTokenPayload: AccessTokenPayloadFn): Promise<void> => {
 	const { quoteId } = req.body;
 	try {
 		//get username, id from access token
@@ -40,4 +44,4 @@ const unlikeQuote = async (req, res, db, jwt, accessTokenPayload) => {
 	}
 };
 
-module.exports = { likeQuote, unlikeQuote };
+export { likeQuote, unlikeQuote };

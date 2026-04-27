@@ -1,4 +1,8 @@
-const fetchNotifications = async (req, res, db, jwt, accessTokenPayload) => {
+import { Request, Response } from 'express';
+import { Knex } from 'knex';
+import { JwtModule, AccessTokenPayloadFn } from '../types';
+
+const fetchNotifications = async (req: Request, res: Response, db: Knex, jwt: JwtModule, accessTokenPayload: AccessTokenPayloadFn): Promise<void> => {
 	const trx = await db.transaction();
 	try {
 		const { username } = await accessTokenPayload(req, res, jwt, db);
@@ -11,11 +15,11 @@ const fetchNotifications = async (req, res, db, jwt, accessTokenPayload) => {
 		await trx('quote_notifications').update('read', 1).join('quotes', 'quotes.id', 'quote_notifications.quotes_id').where({ 'quotes.user_name': username, 'quote_notifications.read': 0 });
 		const favoriteNotifications = await trx('favorite_notifications').select('id', 'notice', 'to_user', 'date').where('to_user', username).orderBy('id', 'desc').limit(10);
 		await trx('favorite_notifications').update('read', 1).where('to_user', username);
-		const allNotifications = quoteNotifications;
-		favoriteNotifications.forEach((obj) => {
+		const allNotifications: any[] = quoteNotifications;
+		favoriteNotifications.forEach((obj: any) => {
 			allNotifications.push(obj);
 		});
-		allNotifications.sort((a, b) => b.date - a.date);
+		allNotifications.sort((a: any, b: any) => b.date - a.date);
 		res.json(allNotifications);
 		await trx.commit();
 	} catch (error) {
@@ -24,4 +28,4 @@ const fetchNotifications = async (req, res, db, jwt, accessTokenPayload) => {
 	}
 };
 
-module.exports = { fetchNotifications };
+export { fetchNotifications };

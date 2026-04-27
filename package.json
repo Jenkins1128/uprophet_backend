@@ -2,9 +2,9 @@
 	"name": "uprophet-backend",
 	"version": "1.0.0",
 	"description": "",
-	"main": "script.js",
+	"main": "server.ts",
 	"scripts": {
-		"start": "nodemon -e ts,js,json --exec 'node -r ts-node/register server.js'",
+		"start": "nodemon -e ts,json --exec 'ts-node server.ts'",
 		"typecheck": "tsc --noEmit",
 		"build": "tsc"
 	},

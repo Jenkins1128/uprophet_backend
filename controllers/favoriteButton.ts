@@ -1,4 +1,8 @@
-const favoriteUser = async (req, res, db, jwt, accessTokenPayload) => {
+import { Request, Response } from 'express';
+import { Knex } from 'knex';
+import { JwtModule, AccessTokenPayloadFn } from '../types';
+
+const favoriteUser = async (req: Request, res: Response, db: Knex, jwt: JwtModule, accessTokenPayload: AccessTokenPayloadFn): Promise<void> => {
 	const { toUser } = req.body;
 	const trx = await db.transaction();
 	try {
@@ -20,7 +24,7 @@ const favoriteUser = async (req, res, db, jwt, accessTokenPayload) => {
 	}
 };
 
-const unfavoriteUser = async (req, res, db, jwt, accessTokenPayload) => {
+const unfavoriteUser = async (req: Request, res: Response, db: Knex, jwt: JwtModule, accessTokenPayload: AccessTokenPayloadFn): Promise<void> => {
 	const { toUser } = req.body;
 	try {
 		const { username } = await accessTokenPayload(req, res, jwt, db);
@@ -36,4 +40,4 @@ const unfavoriteUser = async (req, res, db, jwt, accessTokenPayload) => {
 	}
 };
 
-module.exports = { favoriteUser, unfavoriteUser };
+export { favoriteUser, unfavoriteUser };

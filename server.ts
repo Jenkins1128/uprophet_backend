@@ -1,36 +1,38 @@
-require('dotenv').config();
-const jwt = require('jsonwebtoken');
-const express = require('express');
+import 'dotenv/config';
+import jwt from 'jsonwebtoken';
+import express from 'express';
+import cors from 'cors';
+import crypto from 'crypto';
+import cookieParser from 'cookie-parser';
+import fileUpload from 'express-fileupload';
+import knex from 'knex';
+import { getUser } from './controllers/user';
+import { handleSignin, accessTokenPayload, logout } from './controllers/signin';
+import { handleSignup } from './controllers/signup';
+import { fetchHome, createQuote } from './controllers/home';
+import { likeQuote, unlikeQuote } from './controllers/likeButton';
+import { addComment, fetchComments } from './controllers/quoteComments';
+import { fetchExplore } from './controllers/explore';
+import { uploadPhoto, fetchPhoto } from './controllers/userphoto';
+import { fetchNotifications } from './controllers/notifications';
+import { fetchProfileQuotes, getUserInfo, getCurrentUserInfo } from './controllers/profile';
+import { fetchFavoriters } from './controllers/favoriters';
+import { fetchFavoriting } from './controllers/favoriting';
+import { favoriteUser, unfavoriteUser } from './controllers/favoriteButton';
+import { saveBio } from './controllers/userbio';
+import { changePasswordSignin, changePassword } from './controllers/changePassword';
+import { forgotPassword } from './controllers/forgotPassword';
+import { getNotificationCount } from './controllers/notificationCount';
+import { getQuotePost, deleteQuotePost } from './controllers/quotePost';
+import { getSearchResults } from './controllers/search';
+
 const app = express();
-const cors = require('cors');
-const crypto = require('crypto');
-const cookieParser = require('cookie-parser');
-const fileUpload = require('express-fileupload');
-const { getUser } = require('./controllers/user');
-const { handleSignin, accessTokenPayload, logout } = require('./controllers/signin');
-const { handleSignup } = require('./controllers/signup');
-const { fetchHome, createQuote } = require('./controllers/home');
-const { likeQuote, unlikeQuote } = require('./controllers/likeButton');
-const { addComment, fetchComments } = require('./controllers/quoteComments');
-const { fetchExplore } = require('./controllers/explore');
-const { uploadPhoto, fetchPhoto } = require('./controllers/userphoto');
-const { fetchNotifications } = require('./controllers/notifications');
-const { fetchProfileQuotes, getUserInfo, getCurrentUserInfo } = require('./controllers/profile');
-const { fetchFavoriters } = require('./controllers/favoriters');
-const { fetchFavoriting } = require('./controllers/favoriting');
-const { favoriteUser, unfavoriteUser } = require('./controllers/favoriteButton');
-const { saveBio } = require('./controllers/userbio');
-const { changePasswordSignin, changePassword } = require('./controllers/changePassword');
-const { forgotPassword } = require('./controllers/forgotPassword');
-const { getNotificationCount } = require('./controllers/notificationCount');
-const { getQuotePost, deleteQuotePost } = require('./controllers/quotePost');
-const { getSearchResults } = require('./controllers/search');
-const SITE_KEY = process.env.SITE_KEY;
-const NONCE_SALT = process.env.NONCE_SALT;
+const SITE_KEY = process.env.SITE_KEY!;
+const NONCE_SALT = process.env.NONCE_SALT!;
 
 const isProd = false;
 //DB
-const db = require('knex')({
+const db = knex({
 	client: 'mysql2',
 	connection:	isProd ? process.env.MYSQL_URL :{
 		host: process.env.HOST,
