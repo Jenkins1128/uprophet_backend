@@ -2,11 +2,12 @@
 	"name": "uprophet-backend",
 	"version": "1.0.0",
 	"description": "",
-	"main": "server.ts",
+	"main": "dist/server.js",
 	"scripts": {
-		"start": "nodemon -e ts,json --exec 'ts-node server.ts'",
-		"typecheck": "tsc --noEmit",
-		"build": "tsc"
+		"dev": "nodemon -e ts,json --exec 'ts-node server.ts'",
+		"build": "tsc",
+		"start": "node dist/server.js",
+		"typecheck": "tsc --noEmit"
 	},
 	"author": "Isaiah Jenkins",
 	"license": "ISC",
