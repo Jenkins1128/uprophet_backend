@@ -18,13 +18,13 @@ const fetchPhoto = async (req, res, db) => {
 	const { username } = req.body;
 	try {
 		const img = await db('users').select('photo').where('user_name', username);
-		const buffer = img[0]['photo'];
-		if (img) {
+		if (img.length && img[0]['photo']) {
+			const buffer = img[0]['photo'];
 			res.json({ photo: buffer.toString() });
 		} else {
-			res.sendStatus(400);
+			res.json({ photo: null });
 		}
-	} catch {
+	} catch (error) {
 		res.sendStatus(400);
 	}
 };

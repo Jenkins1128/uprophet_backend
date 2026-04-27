@@ -11,7 +11,9 @@ const likeQuote = async (req, res, db, jwt, accessTokenPayload) => {
 		await trx('quote_notifications').insert({
 			notice: `${username} liked your quote.`,
 			quotes_id: quoteId,
-			date: new Date().toISOString().replace('T', ' ').substr(0, 19)
+			date: process.env.NODE_ENV === 'production' 
+				? new Date().toISOString().replace('T', ' ').substr(0, 19)
+				: new Date().toLocaleString('sv-SE').slice(0, 19)
 		});
 		res.sendStatus(200);
 		await trx.commit();

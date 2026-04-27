@@ -29,7 +29,7 @@ const hashPass = (username, password, userreg, crypto, NONCE_SALT, SITE_KEY) => 
 
 const changePassword = async (req, res, db, crypto, NONCE_SALT, SITE_KEY) => {
 	const { username, password } = req.body;
-	if (!username.length || !password.length) {
+	if (!username || !password || !username.length || !password.length) {
 		return res.sendStatus(400);
 	}
 	const userreg = new Date().getTime();

@@ -50,7 +50,9 @@ const createQuote = async (req, res, db, jwt, accessTokenPayload) => {
 			user_name: username,
 			title: title,
 			quote: quote,
-			date_posted: new Date().toISOString().replace('T', ' ').substr(0, 19)
+			date_posted: process.env.NODE_ENV === 'production' 
+				? new Date().toISOString().replace('T', ' ').substr(0, 19)
+				: new Date().toLocaleString('sv-SE').slice(0, 19)
 		});
 		const extractedQuote = await trx('quotes').select('*').where('id', quoteId[0]);
 		const finalQuote = { ...extractedQuote[0], likeCount: 0, didLike: false };

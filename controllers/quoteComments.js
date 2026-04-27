@@ -12,7 +12,9 @@ const fetchComments = async (req, res, db) => {
 const addComment = async (req, res, db, jwt, accessTokenPayload) => {
 	const { quoteId, comment } = req.body;
 	const trx = await db.transaction();
-	const date = new Date().toISOString().replace('T', ' ').substr(0, 19);
+	const date = process.env.NODE_ENV === 'production' 
+		? new Date().toISOString().replace('T', ' ').substr(0, 19)
+		: new Date().toLocaleString('sv-SE').slice(0, 19);
 	try {
 		const { username } = await accessTokenPayload(req, res, jwt, db);
 		const commentId = await trx('comments').insert({

@@ -28,7 +28,7 @@ const { getSearchResults } = require('./controllers/search');
 const SITE_KEY = process.env.SITE_KEY;
 const NONCE_SALT = process.env.NONCE_SALT;
 
-const isProd = true;
+const isProd = false;
 //DB
 const db = require('knex')({
 	client: 'mysql2',
@@ -42,7 +42,7 @@ const db = require('knex')({
 //MIDDLEWARE
 app.use(cors({
 	credentials: true,
-	origin: ['https://uprophet.com', 'https://www.uprophet.com', 'http://localhost:3001'],
+	origin: ['https://uprophet.com', 'https://www.uprophet.com', 'http://localhost:3000'],
   	methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 }));
 app.use(express.json({ limit: '50mb' }));
@@ -57,6 +57,7 @@ app.post('/api/favoriting', (req, res) => {
 });
 app.post('/api/createQuote', (req, res) => createQuote(req, res, db, jwt, accessTokenPayload));
 app.post('/api/signup', (req, res) => handleSignup(req, res, db, crypto, NONCE_SALT, SITE_KEY));
+app.post('/api/signin', (req, res) => handleSignin(req, res, db, crypto, NONCE_SALT, SITE_KEY, jwt));
 app.post('/api/like', (req, res) => likeQuote(req, res, db, jwt, accessTokenPayload));
 app.post('/api/unlike', (req, res) => unlikeQuote(req, res, db, jwt, accessTokenPayload));
 app.post('/api/addComment', (req, res) => addComment(req, res, db, jwt, accessTokenPayload));
@@ -75,6 +76,7 @@ app.post('/api/userInfo', (req, res) => {
 app.post('/api/changePasswordSignIn', (req, res) => changePasswordSignin(req, res, db, crypto, NONCE_SALT, SITE_KEY));
 app.post('/api/changePassword', (req, res) => changePassword(req, res, db, crypto, NONCE_SALT, SITE_KEY));
 app.post('/api/forgotPassword', (req, res) => forgotPassword(req, res, db, crypto, NONCE_SALT, SITE_KEY));
+app.post('/api/logout', (req, res) => logout(req, res, db, jwt, accessTokenPayload));
 //GETS
 app.get('/api/', (req, res) => {
 	fetchHome(req, res, db, jwt, accessTokenPayload);
@@ -87,9 +89,7 @@ app.get('/api/notifications', (req, res) => fetchNotifications(req, res, db, jwt
 app.get('/api/getNotificationCount', (req, res) => getNotificationCount(req, res, db, jwt, accessTokenPayload));
 app.get('/api/currentUser', (req, res) => getUser(req, res, db, jwt, accessTokenPayload));
 app.get('/api/currentUserInfo', (req, res) => getCurrentUserInfo(req, res, db, jwt, accessTokenPayload));
-app.get('/api/logout', (req, res) => logout(req, res, db, jwt, accessTokenPayload));
 //PUTS
-app.put('/api/signin', (req, res) => handleSignin(req, res, db, crypto, NONCE_SALT, SITE_KEY, jwt));
 app.put('/api/savebio', (req, res) => saveBio(req, res, db, jwt, accessTokenPayload));
 app.put('/api/uploadPic', (req, res) => uploadPhoto(req, res, db, jwt, accessTokenPayload));
 //DELETES
