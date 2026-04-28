@@ -25,6 +25,20 @@ import { forgotPassword } from './controllers/forgotPassword';
 import { getNotificationCount } from './controllers/notificationCount';
 import { getQuotePost, deleteQuotePost } from './controllers/quotePost';
 import { getSearchResults } from './controllers/search';
+import { validate } from './middleware/validate';
+import {
+	usernameSchema,
+	signinSchema,
+	signupSchema,
+	createQuoteSchema,
+	quoteIdSchema,
+	addCommentSchema,
+	toUserSchema,
+	searchSchema,
+	bioSchema,
+	uploadPhotoSchema,
+	forgotPasswordSchema
+} from './validation/schemas';
 
 const app = express();
 const SITE_KEY = process.env.SITE_KEY!;
@@ -40,33 +54,33 @@ app.use(express.json({ limit: '50mb' }));
 app.use(fileUpload());
 app.use(cookieParser());
 //POSTS
-app.post('/api/favoriters', (req, res) => {
+app.post('/api/favoriters', validate(usernameSchema), (req, res) => {
 	fetchFavoriters(req, res, db, jwt, accessTokenPayload);
 });
-app.post('/api/favoriting', (req, res) => {
+app.post('/api/favoriting', validate(usernameSchema), (req, res) => {
 	fetchFavoriting(req, res, db, jwt, accessTokenPayload);
 });
-app.post('/api/createQuote', (req, res) => createQuote(req, res, db, jwt, accessTokenPayload));
-app.post('/api/signup', (req, res) => handleSignup(req, res, db, crypto, NONCE_SALT, SITE_KEY));
-app.post('/api/signin', (req, res) => handleSignin(req, res, db, crypto, NONCE_SALT, SITE_KEY, jwt));
-app.post('/api/like', (req, res) => likeQuote(req, res, db, jwt, accessTokenPayload));
-app.post('/api/unlike', (req, res) => unlikeQuote(req, res, db, jwt, accessTokenPayload));
-app.post('/api/addComment', (req, res) => addComment(req, res, db, jwt, accessTokenPayload));
-app.post('/api/favorite', (req, res) => favoriteUser(req, res, db, jwt, accessTokenPayload));
-app.post('/api/unfavorite', (req, res) => unfavoriteUser(req, res, db, jwt, accessTokenPayload));
-app.post('/api/getPhoto', (req, res) => fetchPhoto(req, res, db));
-app.post('/api/getComments', (req, res) => fetchComments(req, res, db));
-app.post('/api/getQuotePost', (req, res) => getQuotePost(req, res, db, jwt, accessTokenPayload));
-app.post('/api/search', (req, res) => getSearchResults(req, res, db, jwt, accessTokenPayload));
-app.post('/api/profile', (req, res) => {
+app.post('/api/createQuote', validate(createQuoteSchema), (req, res) => createQuote(req, res, db, jwt, accessTokenPayload));
+app.post('/api/signup', validate(signupSchema), (req, res) => handleSignup(req, res, db, crypto, NONCE_SALT, SITE_KEY));
+app.post('/api/signin', validate(signinSchema), (req, res) => handleSignin(req, res, db, crypto, NONCE_SALT, SITE_KEY, jwt));
+app.post('/api/like', validate(quoteIdSchema), (req, res) => likeQuote(req, res, db, jwt, accessTokenPayload));
+app.post('/api/unlike', validate(quoteIdSchema), (req, res) => unlikeQuote(req, res, db, jwt, accessTokenPayload));
+app.post('/api/addComment', validate(addCommentSchema), (req, res) => addComment(req, res, db, jwt, accessTokenPayload));
+app.post('/api/favorite', validate(toUserSchema), (req, res) => favoriteUser(req, res, db, jwt, accessTokenPayload));
+app.post('/api/unfavorite', validate(toUserSchema), (req, res) => unfavoriteUser(req, res, db, jwt, accessTokenPayload));
+app.post('/api/getPhoto', validate(usernameSchema), (req, res) => fetchPhoto(req, res, db));
+app.post('/api/getComments', validate(quoteIdSchema), (req, res) => fetchComments(req, res, db));
+app.post('/api/getQuotePost', validate(quoteIdSchema), (req, res) => getQuotePost(req, res, db, jwt, accessTokenPayload));
+app.post('/api/search', validate(searchSchema), (req, res) => getSearchResults(req, res, db, jwt, accessTokenPayload));
+app.post('/api/profile', validate(usernameSchema), (req, res) => {
 	fetchProfileQuotes(req, res, db, jwt, accessTokenPayload);
 });
-app.post('/api/userInfo', (req, res) => {
+app.post('/api/userInfo', validate(usernameSchema), (req, res) => {
 	getUserInfo(req, res, db, jwt, accessTokenPayload);
 });
-app.post('/api/changePasswordSignIn', (req, res) => changePasswordSignin(req, res, db, crypto, NONCE_SALT, SITE_KEY));
-app.post('/api/changePassword', (req, res) => changePassword(req, res, db, crypto, NONCE_SALT, SITE_KEY));
-app.post('/api/forgotPassword', (req, res) => forgotPassword(req, res, db, crypto, NONCE_SALT, SITE_KEY));
+app.post('/api/changePasswordSignIn', validate(signinSchema), (req, res) => changePasswordSignin(req, res, db, crypto, NONCE_SALT, SITE_KEY));
+app.post('/api/changePassword', validate(signinSchema), (req, res) => changePassword(req, res, db, crypto, NONCE_SALT, SITE_KEY));
+app.post('/api/forgotPassword', validate(forgotPasswordSchema), (req, res) => forgotPassword(req, res, db, crypto, NONCE_SALT, SITE_KEY));
 app.post('/api/logout', (req, res) => logout(req, res, db, jwt, accessTokenPayload));
 //GETS
 app.get('/api/', (req, res) => {
@@ -81,10 +95,10 @@ app.get('/api/getNotificationCount', (req, res) => getNotificationCount(req, res
 app.get('/api/currentUser', (req, res) => getUser(req, res, db, jwt, accessTokenPayload));
 app.get('/api/currentUserInfo', (req, res) => getCurrentUserInfo(req, res, db, jwt, accessTokenPayload));
 //PUTS
-app.put('/api/savebio', (req, res) => saveBio(req, res, db, jwt, accessTokenPayload));
-app.put('/api/uploadPic', (req, res) => uploadPhoto(req, res, db, jwt, accessTokenPayload));
+app.put('/api/savebio', validate(bioSchema), (req, res) => saveBio(req, res, db, jwt, accessTokenPayload));
+app.put('/api/uploadPic', validate(uploadPhotoSchema), (req, res) => uploadPhoto(req, res, db, jwt, accessTokenPayload));
 //DELETES
-app.delete('/api/deleteQuote', (req, res) => deleteQuotePost(req, res, db));
+app.delete('/api/deleteQuote', validate(quoteIdSchema), (req, res) => deleteQuotePost(req, res, db));
 
 const PORT = process.env.PORT || 3001;
 

@@ -39,10 +39,6 @@ function randomString(crypto: CryptoModule, size: number): string {
 }
 
 const resetPassword = async (res: Response, username: string, db: Database, crypto: CryptoModule, NONCE_SALT: string, SITE_KEY: string): Promise<string | void> => {
-	if (!username.length) {
-		res.status(400).json('incorrect form submission');
-		return;
-	}
 	const randPass = randomString(crypto, 7);
 	const userreg = new Date().getTime();
 	const hash = hashPass(username, randPass, userreg, crypto, NONCE_SALT, SITE_KEY);

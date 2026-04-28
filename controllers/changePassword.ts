@@ -42,10 +42,6 @@ const hashPass = (username: string, password: string, userreg: number, crypto: C
 
 const changePassword = async (req: Request, res: Response, db: Database, crypto: CryptoModule, NONCE_SALT: string, SITE_KEY: string): Promise<void> => {
 	const { username, password } = req.body;
-	if (!username || !password || !username.length || !password.length) {
-		res.sendStatus(400);
-		return;
-	}
 	const userreg = new Date().getTime();
 	const hash = hashPass(username, password, userreg, crypto, NONCE_SALT, SITE_KEY);
 
@@ -61,11 +57,6 @@ const changePassword = async (req: Request, res: Response, db: Database, crypto:
 
 const changePasswordSignin = async (req: Request, res: Response, db: Database, crypto: CryptoModule, NONCE_SALT: string, SITE_KEY: string): Promise<void> => {
 	const { username, password } = req.body;
-	if (!username || !password) {
-		res.sendStatus(400);
-		return;
-	}
-
 	try {
 		const data = await db.select({
 			userName: login.userName,
