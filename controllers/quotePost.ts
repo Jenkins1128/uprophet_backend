@@ -1,41 +1,17 @@
-import { Request, Response } from 'express';
-import { eq, count } from 'drizzle-orm';
-import { JwtModule, AccessTokenPayloadFn } from '../types';
-import type { Database } from '../db';
-import { quotes, likes } from '../db/schema';
+import { Response, NextFunction } from 'express';
+import { AuthRequest } from '../types';
+import * as quoteService from '../services/quote.service';
 
-const getQuotePost = async (req: Request, res: Response, db: Database, jwt: JwtModule, accessTokenPayload: AccessTokenPayloadFn): Promise<void> => {
+export const getQuotePost = async (req: AuthRequest, res: Response, next: NextFunction) => {
 	const { quoteId } = req.body;
-	try {
-		const { id } = await accessTokenPayload(req, res, jwt, db);
-
-		const quotePost = await db.select().from(quotes).where(eq(quotes.id, quoteId));
-		const likeCountResult = await db.select({ likeCount: count(likes.usersId) })
-			.from(likes)
-			.where(eq(likes.quotesId, quoteId));
-		const didLikeResult = await db.select({ usersId: likes.usersId })
-			.from(likes)
-			.where(eq(likes.quotesId, quoteId));
-		const didLike = didLikeResult.some((row) => row.usersId === id);
-
-		res.json({
-			...quotePost[0],
-			likeCount: likeCountResult[0]?.likeCount ?? 0,
-			didLike,
-		});
-	} catch (error) {
-		res.sendStatus(400);
-	}
+	const { id } = req.user!;
+	const quote = await quoteService.getSingleQuote(id, quoteId);
+	if (!quote) return res.status(404).json({ message: 'Quote not found' });
+	res.json(quote);
 };
 
-const deleteQuotePost = async (req: Request, res: Response, db: Database): Promise<void> => {
+export const deleteQuotePost = async (req: AuthRequest, res: Response, next: NextFunction) => {
 	const { quoteId } = req.body;
-	try {
-		await db.delete(quotes).where(eq(quotes.id, quoteId));
-		res.sendStatus(200);
-	} catch {
-		res.sendStatus(400);
-	}
+	await quoteService.deleteQuote(quoteId);
+	res.sendStatus(200);
 };
-
-export { getQuotePost, deleteQuotePost };

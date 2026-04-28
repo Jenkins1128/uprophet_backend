@@ -18,5 +18,9 @@ export type AccessTokenPayloadFn = (
 	db: Database
 ) => Promise<TokenPayload>;
 
+export interface AuthRequest extends Request {
+	user?: TokenPayload;
+}
+
 // Common node crypto module type
 export type CryptoModule = typeof import('crypto');

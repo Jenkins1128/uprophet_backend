@@ -1,8 +1,11 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
+import crypto from 'crypto';
 import { eq } from 'drizzle-orm';
-import { CryptoModule } from '../types';
-import type { Database } from '../db';
+import { db } from '../db';
 import { login } from '../db/schema';
+
+const SITE_KEY = process.env.SITE_KEY!;
+const NONCE_SALT = process.env.NONCE_SALT!;
 
 interface LoginRecord {
 	userName: string;
@@ -11,16 +14,14 @@ interface LoginRecord {
 	userRegistered: number;
 }
 
-const compare = (username: string, password: string, data: LoginRecord[], crypto: CryptoModule, NONCE_SALT: string, SITE_KEY: string): boolean => {
+const compare = (username: string, password: string, data: LoginRecord[]): boolean => {
+	if (!data.length) return false;
 	const storeg = data[0].userRegistered;
-	//The hashed password of the stored matching user
 	const stopass = data[0].password;
-	//Recreate our NONCE used at registration
 	const nonce = crypto
 		.createHash('md5')
 		.update('registration-' + username + storeg + NONCE_SALT)
 		.digest('hex');
-	//Rehash the submitted password to see if it matches the stored hash
 	const subpass = crypto
 		.createHmac('sha512', SITE_KEY)
 		.update(password + nonce)
@@ -28,7 +29,7 @@ const compare = (username: string, password: string, data: LoginRecord[], crypto
 	return subpass === stopass;
 };
 
-const hashPass = (username: string, password: string, userreg: number, crypto: CryptoModule, NONCE_SALT: string, SITE_KEY: string): string => {
+const hashPass = (username: string, password: string, userreg: number): string => {
 	const nonce = crypto
 		.createHash('md5')
 		.update('registration-' + username + userreg + NONCE_SALT)
@@ -40,39 +41,29 @@ const hashPass = (username: string, password: string, userreg: number, crypto: C
 	return userpass;
 };
 
-const changePassword = async (req: Request, res: Response, db: Database, crypto: CryptoModule, NONCE_SALT: string, SITE_KEY: string): Promise<void> => {
+export const changePassword = async (req: Request, res: Response, next: NextFunction) => {
 	const { username, password } = req.body;
 	const userreg = new Date().getTime();
-	const hash = hashPass(username, password, userreg, crypto, NONCE_SALT, SITE_KEY);
+	const hash = hashPass(username, password, userreg);
 
-	try {
-		await db.update(login)
-			.set({ password: hash, userRegistered: userreg })
-			.where(eq(login.userName, username));
-		res.sendStatus(200);
-	} catch (err) {
-		res.sendStatus(400);
-	}
+	await db.update(login)
+		.set({ password: hash, userRegistered: userreg })
+		.where(eq(login.userName, username));
+	res.sendStatus(200);
 };
 
-const changePasswordSignin = async (req: Request, res: Response, db: Database, crypto: CryptoModule, NONCE_SALT: string, SITE_KEY: string): Promise<void> => {
+export const changePasswordSignin = async (req: Request, res: Response, next: NextFunction) => {
 	const { username, password } = req.body;
-	try {
-		const data = await db.select({
-			userName: login.userName,
-			password: login.password,
-			usersId: login.usersId,
-			userRegistered: login.userRegistered,
-		}).from(login).where(eq(login.userName, username));
+	const data = await db.select({
+		userName: login.userName,
+		password: login.password,
+		usersId: login.usersId,
+		userRegistered: login.userRegistered,
+	}).from(login).where(eq(login.userName, username));
 
-		if (compare(username, password, data, crypto, NONCE_SALT, SITE_KEY)) {
-			res.sendStatus(200);
-		} else {
-			res.sendStatus(401);
-		}
-	} catch (err) {
-		res.sendStatus(401);
+	if (compare(username, password, data)) {
+		res.sendStatus(200);
+	} else {
+		res.status(401).json({ message: 'Invalid credentials' });
 	}
 };
-
-export { changePasswordSignin, changePassword };

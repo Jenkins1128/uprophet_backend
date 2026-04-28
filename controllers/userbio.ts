@@ -1,20 +1,14 @@
-import { Request, Response } from 'express';
+import { Response, NextFunction } from 'express';
 import { eq } from 'drizzle-orm';
-import { JwtModule, AccessTokenPayloadFn } from '../types';
-import type { Database } from '../db';
+import { db } from '../db';
 import { users } from '../db/schema';
+import { AuthRequest } from '../types';
 
-const saveBio = async (req: Request, res: Response, db: Database, jwt: JwtModule, accessTokenPayload: AccessTokenPayloadFn): Promise<void> => {
+export const saveBio = async (req: AuthRequest, res: Response, next: NextFunction) => {
 	const { bio } = req.body;
-	try {
-		const { username } = await accessTokenPayload(req, res, jwt, db);
-		await db.update(users)
-			.set({ bio })
-			.where(eq(users.userName, username));
-		res.sendStatus(200);
-	} catch (error) {
-		res.sendStatus(400);
-	}
+	const { username } = req.user!;
+	await db.update(users)
+		.set({ bio })
+		.where(eq(users.userName, username));
+	res.sendStatus(200);
 };
-
-export { saveBio };

@@ -1,28 +1,29 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
+import crypto from 'crypto';
 import { eq } from 'drizzle-orm';
 import { Resend } from 'resend';
-import { CryptoModule } from '../types';
-import type { Database } from '../db';
+import { db } from '../db';
 import { login, users } from '../db/schema';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
+const SITE_KEY = process.env.SITE_KEY!;
+const NONCE_SALT = process.env.NONCE_SALT!;
 
 const sendMail = async (username: string, userEmail: string, tempPassword: string): Promise<void> => {
     try {
-        const data = await resend.emails.send({
+        await resend.emails.send({
             from: 'Uprophet <noreply@recovery.uprophet.com>',
             to: userEmail,
             subject: 'Uprophet Temporary Password',
             html: `Hello ${username},<br><br>Here is your temporary password: <strong>${tempPassword}</strong> <br><br> <a href="https://uprophet.com/changepassword">Change Password</a>`
         });
-        console.log("SUCCESS: Email sent via Resend API", data);
     } catch (error) {
         console.error("Resend API Error:", error);
         throw error;
     }
 };
 
-const hashPass = (username: string, password: string, userreg: number, crypto: CryptoModule, NONCE_SALT: string, SITE_KEY: string): string => {
+const hashPass = (username: string, password: string, userreg: number): string => {
 	const nonce = crypto
 		.createHash('md5')
 		.update('registration-' + username + userreg + NONCE_SALT)
@@ -34,43 +35,38 @@ const hashPass = (username: string, password: string, userreg: number, crypto: C
 	return userpass;
 };
 
-function randomString(crypto: CryptoModule, size: number): string {
+function randomString(size: number): string {
 	return crypto.randomBytes(size).toString('base64').slice(0, size);
 }
 
-const resetPassword = async (res: Response, username: string, db: Database, crypto: CryptoModule, NONCE_SALT: string, SITE_KEY: string): Promise<string | void> => {
-	const randPass = randomString(crypto, 7);
+const resetPassword = async (username: string): Promise<string> => {
+	const randPass = randomString(7);
 	const userreg = new Date().getTime();
-	const hash = hashPass(username, randPass, userreg, crypto, NONCE_SALT, SITE_KEY);
+	const hash = hashPass(username, randPass, userreg);
 
-	try {
-		await db.update(login)
-			.set({ password: hash, userRegistered: userreg })
-			.where(eq(login.userName, username));
-		return randPass;
-	} catch (err) {
-		res.status(400).json('user name does not exist: ' + err);
-	}
+	await db.update(login)
+		.set({ password: hash, userRegistered: userreg })
+		.where(eq(login.userName, username));
+	
+	return randPass;
 };
 
-const forgotPassword = async (req: Request, res: Response, db: Database, crypto: CryptoModule, NONCE_SALT: string, SITE_KEY: string): Promise<void> => {
+export const forgotPassword = async (req: Request, res: Response, next: NextFunction) => {
 	const { username, email } = req.body;
-	try {
-		const userEmail = await db.select({ email: users.email })
-			.from(users)
-			.where(eq(users.userName, username));
-		if (userEmail.length && userEmail[0].email !== email) {
-			throw new Error('Email mismatch');
-		}
-		console.log("forgot userEmail found", userEmail);
-		const tempPass = await resetPassword(res, username, db, crypto, NONCE_SALT, SITE_KEY);
-		console.log("tempPass created!", userEmail);
-		await sendMail(username, userEmail[0].email!, tempPass as string);
-		res.sendStatus(200);
-	} catch (error) {
-		console.error("DETAILED AUTH ERROR:", error);
-		res.sendStatus(400);
+	
+	const userEmailResult = await db.select({ email: users.email })
+		.from(users)
+		.where(eq(users.userName, username));
+	
+	if (!userEmailResult.length) {
+		return res.status(404).json({ message: 'User not found' });
 	}
-};
 
-export { forgotPassword };
+	if (userEmailResult[0].email !== email) {
+		return res.status(400).json({ message: 'Email mismatch' });
+	}
+
+	const tempPass = await resetPassword(username);
+	await sendMail(username, userEmailResult[0].email!, tempPass);
+	res.sendStatus(200);
+};
