@@ -1,11 +1,18 @@
 import { Request, Response, NextFunction } from 'express';
 import { ZodSchema, ZodError } from 'zod';
 
-export const validate = (schema: ZodSchema) => {
+type RequestSource = 'body' | 'params';
+
+export const validate = (schema: ZodSchema, source: RequestSource = 'body') => {
 	return (req: Request, res: Response, next: NextFunction) => {
 		try {
-			// We validate req.body and potentially update it with parsed values
-			req.body = schema.parse(req.body);
+			const parsed = schema.parse(req[source]);
+			if (source === 'body') {
+				req.body = parsed;
+			} else {
+				// params is read-only; cast to allow writing parsed coerced values
+				(req as any).params = parsed;
+			}
 			next();
 		} catch (error) {
 			if (error instanceof ZodError) {

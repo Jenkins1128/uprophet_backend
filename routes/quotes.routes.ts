@@ -7,7 +7,7 @@ import { fetchExplore } from '../controllers/explore';
 import { protect } from '../middleware/auth';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { validate } from '../middleware/validate';
-import { createQuoteSchema, quoteIdSchema, addCommentSchema } from '../validation/schemas';
+import { createQuoteSchema, quoteIdSchema, addCommentSchema, quoteIdParamSchema } from '../validation/schemas';
 
 const router = Router();
 
@@ -20,8 +20,8 @@ router.post('/createQuote', validate(createQuoteSchema), asyncHandler(createQuot
 router.post('/like', validate(quoteIdSchema), asyncHandler(likeQuote));
 router.post('/unlike', validate(quoteIdSchema), asyncHandler(unlikeQuote));
 router.post('/addComment', validate(addCommentSchema), asyncHandler(addComment));
-router.post('/getComments', validate(quoteIdSchema), asyncHandler(fetchComments));
-router.post('/getQuotePost', validate(quoteIdSchema), asyncHandler(getQuotePost));
+router.get('/quotes/:quoteId/comments', validate(quoteIdParamSchema, 'params'), asyncHandler(fetchComments));
+router.get('/quotes/:quoteId', validate(quoteIdParamSchema, 'params'), asyncHandler(getQuotePost));
 router.delete('/deleteQuote', validate(quoteIdSchema), asyncHandler(deleteQuotePost));
 
 export default router;

@@ -25,6 +25,11 @@ export const quoteIdSchema = z.object({
 	quoteId: z.coerce.number().int().positive(),
 });
 
+/** Same shape but used for URL params (req.params) instead of req.body */
+export const quoteIdParamSchema = z.object({
+	quoteId: z.coerce.number().int().positive(),
+});
+
 export const addCommentSchema = z.object({
 	quoteId: z.coerce.number().int().positive(),
 	comment: z.string().min(1).max(255),

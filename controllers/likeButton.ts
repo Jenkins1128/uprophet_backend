@@ -8,7 +8,7 @@ export const likeQuote = async (req: AuthRequest, res: Response, next: NextFunct
 		return res.status(401).json({ message: 'User not authenticated' });
 	}
 	const { id, username } = req.user;
-	await quoteService.likeAQuote(id, username, quoteId);
+	await quoteService.likeAQuote(id, username, Number(quoteId));
 	res.sendStatus(200);
 };
 
@@ -18,6 +18,6 @@ export const unlikeQuote = async (req: AuthRequest, res: Response, next: NextFun
 		return res.status(401).json({ message: 'User not authenticated' });
 	}
 	const { id } = req.user;
-	await quoteService.unlikeAQuote(id, quoteId);
+	await quoteService.unlikeAQuote(id, Number(quoteId));
 	res.sendStatus(200);
 };
