@@ -10,7 +10,10 @@ export const fetchComments = async (req: AuthRequest, res: Response, next: NextF
 
 export const addComment = async (req: AuthRequest, res: Response, next: NextFunction) => {
 	const { quoteId, comment } = req.body;
-	const { username } = req.user!;
+	if (!req.user) {
+		return res.status(401).json({ message: 'User not authenticated' });
+	}
+	const { username } = req.user;
 	const addedComment = await quoteService.addQuoteComment(username, quoteId, comment);
 	res.json(addedComment);
 };

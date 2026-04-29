@@ -15,7 +15,7 @@ const app = express();
 // MIDDLEWARE
 app.use(cors({
 	credentials: true,
-	origin: ['https://uprophet.com', 'https://www.uprophet.com', 'http://localhost:3000'],
+	origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['https://uprophet.com', 'https://www.uprophet.com', 'http://localhost:3000'],
 	methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 }));
 app.use(express.json({ limit: '50mb' }));
@@ -35,7 +35,7 @@ app.use('/api', userRoutes);
 // GLOBAL ERROR HANDLER
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT;
 
 app.listen(PORT, () => {
 	console.log(`app is running on port ${PORT}`);

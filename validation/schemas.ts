@@ -22,11 +22,11 @@ export const createQuoteSchema = z.object({
 });
 
 export const quoteIdSchema = z.object({
-	quoteId: z.number().int().positive(),
+	quoteId: z.coerce.number().int().positive(),
 });
 
 export const addCommentSchema = z.object({
-	quoteId: z.number().int().positive(),
+	quoteId: z.coerce.number().int().positive(),
 	comment: z.string().min(1).max(255),
 });
 

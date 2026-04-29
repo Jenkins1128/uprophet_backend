@@ -1,6 +1,7 @@
-import { eq, inArray, sql, count, and } from 'drizzle-orm';
+import { eq, inArray, sql, count, and, desc } from 'drizzle-orm';
 import { db } from '../db';
 import { quotes, likes, favoriting, quoteNotifications, comments } from '../db/schema';
+import { getDbTimestamp } from '../utils/date.utils';
 
 export const getHomeQuotes = async (userId: number, username: string) => {
 	// 1. Get users followed by current user
@@ -40,8 +41,10 @@ export const getHomeQuotes = async (userId: number, username: string) => {
 	// 5. Check which ones the user liked
 	const userLikedQuotes = await db.select({ quotesId: likes.quotesId })
 		.from(likes)
-		.where(sql`${likes.usersId} = ${userId} AND ${likes.quotesId} IN ${extractedMaxIds}`)
-		.groupBy(likes.quotesId);
+		.where(and(
+			eq(likes.usersId, userId),
+			inArray(likes.quotesId, extractedMaxIds)
+		));
 	
 	const likedSet = new Set<number>(userLikedQuotes.map((q) => q.quotesId));
 
@@ -60,25 +63,68 @@ export const getHomeQuotes = async (userId: number, username: string) => {
 	});
 };
 
+export const getRandomExploreQuotes = async (userId: number) => {
+	const randomQuoteIds = await db.select({ id: quotes.id })
+		.from(quotes)
+		.orderBy(sql`RAND()`)
+		.limit(20);
+	const extractedQuoteIds = randomQuoteIds.map((row) => row.id);
+
+	if (!extractedQuoteIds.length) {
+		return [];
+	}
+
+	const quotesResult = await db.select().from(quotes).where(inArray(quotes.id, extractedQuoteIds));
+
+	// Get like counts
+	const likeCounts = await db.select({
+		quotesId: likes.quotesId,
+		quoteLikeCount: count(likes.quotesId),
+	}).from(likes)
+		.where(inArray(likes.quotesId, extractedQuoteIds))
+		.groupBy(likes.quotesId);
+
+	const likeCountsMap = new Map<number, number>();
+	likeCounts.forEach((lc) => likeCountsMap.set(lc.quotesId, lc.quoteLikeCount));
+
+	// Add didLike
+	const userLikedQuotes = await db.select({ quotesId: likes.quotesId })
+		.from(likes)
+		.where(and(
+			eq(likes.usersId, userId),
+			inArray(likes.quotesId, extractedQuoteIds)
+		));
+	const likedSet = new Set<number>(userLikedQuotes.map((q) => q.quotesId));
+
+	return quotesResult.map((quote) => ({
+		...quote,
+		likeCount: likeCountsMap.get(quote.id) ?? 0,
+		didLike: likedSet.has(quote.id),
+	}));
+};
+
 export const createNewQuote = async (username: string, title: string, quote: string) => {
-	const datePosted = process.env.NODE_ENV === 'production'
-		? new Date().toISOString().replace('T', ' ').substr(0, 19)
-		: new Date().toLocaleString('sv-SE').slice(0, 19);
+	const datePosted = getDbTimestamp();
 
 	const result = await db.insert(quotes).values({
 		userName: username,
 		title,
 		quote,
 		datePosted,
-	}).$returningId();
+	});
 
-	const quoteId = (result[0] as { id: number }).id;
+	const quoteId = result[0].insertId;
 	const extractedQuote = await db.select().from(quotes).where(eq(quotes.id, quoteId));
+	
+	if (!extractedQuote.length) {
+		throw new Error('Failed to retrieve created quote');
+	}
 	
 	return { ...extractedQuote[0], likeCount: 0, didLike: false };
 };
 
 export const likeAQuote = async (userId: number, username: string, quoteId: number) => {
+	const date = getDbTimestamp();
 	await db.transaction(async (tx) => {
 		await tx.insert(likes).values({
 			usersId: userId,
@@ -87,9 +133,7 @@ export const likeAQuote = async (userId: number, username: string, quoteId: numb
 		await tx.insert(quoteNotifications).values({
 			notice: `${username} liked your quote.`,
 			quotesId: quoteId,
-			date: process.env.NODE_ENV === 'production'
-				? new Date().toISOString().replace('T', ' ').substr(0, 19)
-				: new Date().toLocaleString('sv-SE').slice(0, 19),
+			date: date,
 		});
 	});
 };
@@ -103,21 +147,19 @@ export const unlikeAQuote = async (userId: number, quoteId: number) => {
 export const getCommentsForQuote = async (quoteId: number) => {
 	return await db.select().from(comments)
 		.where(eq(comments.quotesId, quoteId))
-		.orderBy(sql`${comments.id} DESC`);
+		.orderBy(desc(comments.id));
 };
 
-export const addQuoteComment = async (username: string, quoteId: number, comment: string) => {
-	const date = process.env.NODE_ENV === 'production'
-		? new Date().toISOString().replace('T', ' ').substr(0, 19)
-		: new Date().toLocaleString('sv-SE').slice(0, 19);
+export const addQuoteComment = async (username: string, quoteId: number, commentText: string) => {
+	const date = getDbTimestamp();
 
 	return await db.transaction(async (tx) => {
 		const result = await tx.insert(comments).values({
 			quotesId: quoteId,
-			comment: comment,
+			comment: commentText,
 			commenter: username,
 			datePosted: date,
-		}).$returningId();
+		});
 
 		await tx.insert(quoteNotifications).values({
 			notice: `${username} commented on your quote.`,
@@ -125,7 +167,10 @@ export const addQuoteComment = async (username: string, quoteId: number, comment
 			date: date,
 		});
 
-		const addedComment = await tx.select().from(comments).where(eq(comments.id, (result[0] as { id: number }).id));
+		const addedComment = await tx.select().from(comments).where(eq(comments.id, result[0].insertId));
+		if (!addedComment.length) {
+			throw new Error('Failed to retrieve added comment');
+		}
 		return addedComment[0];
 	});
 };
