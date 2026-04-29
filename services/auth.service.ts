@@ -23,7 +23,14 @@ const hashPass = (username: string, password: string, userreg: number): string =
 	return userpass;
 };
 
-const compare = (username: string, password: string, data: any[]): boolean => {
+interface LoginData {
+	userName: string;
+	password: string;
+	usersId: number;
+	userRegistered: number;
+}
+
+const compare = (username: string, password: string, data: LoginData[]): boolean => {
 	if (!data.length) return false;
 	const storeg = data[0].userRegistered;
 	const stopass = data[0].password;
@@ -83,13 +90,13 @@ export const signinUser = async (username: string, password: string) => {
 	
 	const accessSignOptions: SignOptions = {
 		algorithm: 'HS256',
-		expiresIn: process.env.ACCESS_TOKEN_LIFE as any,
+		expiresIn: (process.env.ACCESS_TOKEN_LIFE as SignOptions['expiresIn']) || '1h',
 	};
 	const accessToken = jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET!, accessSignOptions);
 	
 	const refreshSignOptions: SignOptions = {
 		algorithm: 'HS256',
-		expiresIn: process.env.REFRESH_TOKEN_LIFE as any,
+		expiresIn: (process.env.REFRESH_TOKEN_LIFE as SignOptions['expiresIn']) || '7d',
 	};
 	const refreshToken = jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET!, refreshSignOptions);
 	

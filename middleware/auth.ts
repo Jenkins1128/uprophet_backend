@@ -37,7 +37,7 @@ export const protect = async (req: AuthRequest, res: Response, next: NextFunctio
 			// 4. Generate new access token
 			const signOptions: SignOptions = {
 				algorithm: 'HS256',
-				expiresIn: process.env.ACCESS_TOKEN_LIFE as any,
+				expiresIn: (process.env.ACCESS_TOKEN_LIFE as SignOptions['expiresIn']) || '1h',
 			};
 
 			const newToken = jwt.sign(

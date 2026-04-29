@@ -7,12 +7,13 @@ export const forgotPassword = async (req: Request, res: Response, next: NextFunc
 	try {
 		await authService.processForgotPassword(username, email);
 		res.sendStatus(200);
-	} catch (error: any) {
-		if (error.message === 'User not found') {
-			return res.status(404).json({ message: error.message });
+	} catch (error: unknown) {
+		const message = error instanceof Error ? error.message : 'Unknown error';
+		if (message === 'User not found') {
+			return res.status(404).json({ message });
 		}
-		if (error.message === 'Email mismatch') {
-			return res.status(400).json({ message: error.message });
+		if (message === 'Email mismatch') {
+			return res.status(400).json({ message });
 		}
 		next(error);
 	}

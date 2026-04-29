@@ -10,8 +10,8 @@ export const validate = (schema: ZodSchema, source: RequestSource = 'body') => {
 			if (source === 'body') {
 				req.body = parsed;
 			} else {
-				// params is read-only; cast to allow writing parsed coerced values
-				(req as any).params = parsed;
+				// params is read-only in Express types; cast to unknown then to the parsed type
+				(req as unknown as { params: typeof parsed }).params = parsed;
 			}
 			next();
 		} catch (error) {
