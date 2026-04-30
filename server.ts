@@ -13,11 +13,23 @@ import userRoutes from './routes/user.routes';
 const app = express();
 
 // MIDDLEWARE
+const allowedOrigins = process.env.ALLOWED_ORIGINS 
+	? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()) 
+	: ['https://uprophet.com', 'https://www.uprophet.com', 'http://localhost:3000'];
+
 app.use(cors({
 	credentials: true,
-	origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['https://uprophet.com', 'https://www.uprophet.com', 'http://localhost:3000'],
+	origin: (origin, callback) => {
+		// Allow requests with no origin (like mobile apps or curl requests)
+		if (!origin || allowedOrigins.includes(origin)) {
+			callback(null, true);
+		} else {
+			callback(null, false);
+		}
+	},
 	methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-	allowedHeaders: ['Content-Type', 'Authorization'],
+	allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+	optionsSuccessStatus: 200
 }));
 app.use(express.json({ limit: '50mb' }));
 app.use(fileUpload());
