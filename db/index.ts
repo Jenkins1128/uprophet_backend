@@ -3,7 +3,7 @@ import { drizzle } from 'drizzle-orm/mysql2';
 import mysql from 'mysql2/promise';
 import * as schema from './schema';
 
-const isProd = true;
+const isProd = process.env.NODE_ENV === 'production';
 
 const pool = mysql.createPool(
 	isProd
