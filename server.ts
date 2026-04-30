@@ -21,14 +21,19 @@ app.use(cors({
 	credentials: true,
 	origin: (origin, callback) => {
 		// Allow requests with no origin (like mobile apps or curl requests)
-		if (!origin || allowedOrigins.includes(origin)) {
+		if (!origin) return callback(null, true);
+		
+		// Match uprophet.com and any of its subdomains, including optional ports
+		const isUProphet = /^https?:\/\/([a-z0-9-]+\.)?uprophet\.com(:[0-9]+)?$/.test(origin);
+		const isLocal = /^http:\/\/localhost(:[0-9]+)?$/.test(origin);
+		
+		if (isUProphet || isLocal || allowedOrigins.includes(origin)) {
 			callback(null, true);
 		} else {
 			callback(null, false);
 		}
 	},
 	methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-	allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
 	optionsSuccessStatus: 200
 }));
 app.use(express.json({ limit: '50mb' }));
