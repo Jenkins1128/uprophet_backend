@@ -7,12 +7,13 @@ const isProd = process.env.NODE_ENV === 'production';
 
 const pool = mysql.createPool(
 	isProd
-		? { uri: process.env.MYSQL_URL }
+		? { uri: process.env.MYSQL_URL, timezone: '+00:00' }
 		: {
 			host: process.env.HOST,
 			user: process.env.USER_DEV,
 			password: process.env.PASSWORD_DEV,
 			database: process.env.DATABASE_DEV,
+			timezone: '+00:00',
 		}
 );
 
