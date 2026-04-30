@@ -15,7 +15,7 @@ const app = express();
 // MIDDLEWARE
 app.use(cors({
 	credentials: true,
-	origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['https://uprophet.com', 'https://www.uprophet.com', 'http://localhost:3000'],
+	origin: ['https://uprophet.com', 'https://www.uprophet.com', 'http://localhost:3000'],
 	methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 }));
 app.use(express.json({ limit: '50mb' }));
